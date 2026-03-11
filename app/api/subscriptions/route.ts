@@ -9,6 +9,8 @@ const createSchema = z.object({
   category: z.string().min(1, "Category is required"),
   monthlyCost: z.number().positive("Cost must be positive"),
   billingDate: z.number().int().min(1).max(31),
+  trialEndsAt: z.string().datetime().optional().nullable(),
+  monthlyUsageCount: z.number().int().min(0).optional().nullable(),
 });
 
 export async function GET(): Promise<NextResponse> {
@@ -32,6 +34,8 @@ export async function GET(): Promise<NextResponse> {
       category: s.category,
       monthlyCost: Number(s.monthlyCost),
       billingDate: s.billingDate,
+      trialEndsAt: s.trialEndsAt?.toISOString() ?? null,
+      monthlyUsageCount: s.monthlyUsageCount ?? 0,
       createdAt: s.createdAt.toISOString(),
     })),
     totalMonthly,
@@ -63,6 +67,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       category: parsed.data.category,
       monthlyCost: parsed.data.monthlyCost,
       billingDate: parsed.data.billingDate,
+      trialEndsAt: parsed.data.trialEndsAt ? new Date(parsed.data.trialEndsAt) : undefined,
+      monthlyUsageCount: parsed.data.monthlyUsageCount ?? undefined,
     },
   });
   return NextResponse.json({
@@ -71,6 +77,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     category: subscription.category,
     monthlyCost: Number(subscription.monthlyCost),
     billingDate: subscription.billingDate,
+    trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+    monthlyUsageCount: subscription.monthlyUsageCount ?? 0,
     createdAt: subscription.createdAt.toISOString(),
   });
 }

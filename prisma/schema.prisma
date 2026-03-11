@@ -19,6 +19,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   subscriptions Subscription[]
+  circles       Circle[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -58,14 +59,45 @@ model VerificationToken {
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
-  name        String
-  category    String
-  monthlyCost Decimal  @db.Decimal(10, 2)
-  billingDate Int      // day of month 1-31
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  name               String
+  category           String
+  monthlyCost        Decimal   @db.Decimal(10, 2)
+  billingDate        Int       // day of month 1-31
+  userId             String
+  trialEndsAt        DateTime? // when free trial ends (optional)
+  monthlyUsageCount  Int?      @default(0) // manual usage count for current billing period
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Circle {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Family"
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members   CircleMember[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CircleMember {
+  id             String   @id @default(cuid())
+  circleId      String
+  circle        Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  name          String
+  email         String?
+  subscriptions CircleMemberSubscription[]
+  createdAt     DateTime @default(now())
+}
+
+model CircleMemberSubscription {
+  id        String   @id @default(cuid())
+  memberId  String
+  member    CircleMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name      String   // e.g. "Netflix"
+  monthlyCost Decimal @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
 }

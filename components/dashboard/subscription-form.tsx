@@ -48,6 +48,8 @@ export function SubscriptionForm({
   const [category, setCategory] = useState("");
   const [monthlyCost, setMonthlyCost] = useState("");
   const [billingDate, setBillingDate] = useState("");
+  const [trialEndsAt, setTrialEndsAt] = useState("");
+  const [monthlyUsageCount, setMonthlyUsageCount] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,11 +65,15 @@ export function SubscriptionForm({
         setCategory(editing.category);
         setMonthlyCost(String(editing.monthlyCost));
         setBillingDate(String(editing.billingDate));
+        setTrialEndsAt(editing.trialEndsAt ? editing.trialEndsAt.slice(0, 16) : "");
+        setMonthlyUsageCount(editing.monthlyUsageCount != null ? String(editing.monthlyUsageCount) : "");
       } else {
         setName("");
         setCategory("");
         setMonthlyCost("");
         setBillingDate("");
+        setTrialEndsAt("");
+        setMonthlyUsageCount("");
       }
     }
   }, [open, editing]);
@@ -93,18 +99,26 @@ export function SubscriptionForm({
       setError("Billing date must be between 1 and 31");
       return;
     }
+    const usageCount = monthlyUsageCount === "" ? undefined : parseInt(monthlyUsageCount, 10);
+    if (monthlyUsageCount !== "" && (Number.isNaN(usageCount) || usageCount < 0)) {
+      setError("Usage count must be 0 or more");
+      return;
+    }
     setSaving(true);
     try {
+      const payload = {
+        name: name.trim(),
+        category,
+        monthlyCost: cost,
+        billingDate: date,
+        trialEndsAt: trialEndsAt ? new Date(trialEndsAt).toISOString() : null,
+        monthlyUsageCount: usageCount ?? null,
+      };
       if (editing) {
         const res = await fetch(`/api/subscriptions/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            category,
-            monthlyCost: cost,
-            billingDate: date,
-          }),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -115,12 +129,7 @@ export function SubscriptionForm({
         const res = await fetch("/api/subscriptions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            category,
-            monthlyCost: cost,
-            billingDate: date,
-          }),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -194,6 +203,26 @@ export function SubscriptionForm({
                 value={billingDate}
                 onChange={(e) => setBillingDate(e.target.value)}
                 placeholder="15"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="trialEndsAt">Trial ends (optional)</Label>
+              <Input
+                id="trialEndsAt"
+                type="datetime-local"
+                value={trialEndsAt}
+                onChange={(e) => setTrialEndsAt(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="monthlyUsageCount">Times used this month (optional)</Label>
+              <Input
+                id="monthlyUsageCount"
+                type="number"
+                min="0"
+                value={monthlyUsageCount}
+                onChange={(e) => setMonthlyUsageCount(e.target.value)}
+                placeholder="0"
               />
             </div>
           </div>

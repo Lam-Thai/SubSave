@@ -12,6 +12,9 @@ import {
 import { formatCurrency, getBillingDateLabel } from "@/lib/utils";
 import { SubscriptionForm } from "@/components/dashboard/subscription-form";
 import { SubscriptionList } from "@/components/dashboard/subscription-list";
+import { UsageValueMeter } from "@/components/dashboard/usage-value-meter";
+import { TrialTrapDetector } from "@/components/dashboard/trial-trap-detector";
+import { SharingOptimizer } from "@/components/dashboard/sharing-optimizer";
 import { Plus } from "lucide-react";
 
 export interface Subscription {
@@ -20,6 +23,8 @@ export interface Subscription {
   category: string;
   monthlyCost: number;
   billingDate: number;
+  trialEndsAt: string | null;
+  monthlyUsageCount: number;
   createdAt: string;
 }
 
@@ -102,6 +107,10 @@ export function DashboardClient() {
         </CardContent>
       </Card>
 
+      <TrialTrapDetector />
+
+      <UsageValueMeter />
+
       <Card className="card-glow rounded-xl border-border bg-card">
         <CardHeader>
           <CardTitle className="text-foreground">Subscriptions</CardTitle>
@@ -119,6 +128,8 @@ export function DashboardClient() {
           />
         </CardContent>
       </Card>
+
+      <SharingOptimizer />
 
       <SubscriptionForm
         open={formOpen}

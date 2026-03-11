@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +37,7 @@ export function SignInForm() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md card-glow rounded-2xl border-border bg-card/95 shadow-green-glow-sm backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center pb-2">
+          <Image src="/logo.svg" alt="SubSave" width={56} height={56} className="mx-auto mb-2 rounded-xl" />
           <CardTitle className="text-2xl font-bold">
             Sign in to <span className="gradient-text">SubSave</span>
           </CardTitle>

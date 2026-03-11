@@ -11,6 +11,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SubSave – Track subscription spending",
   description: "Personal finance app to track and manage subscription spending.",
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

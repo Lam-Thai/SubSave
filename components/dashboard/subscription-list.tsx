@@ -50,9 +50,19 @@ export function SubscriptionList({
             className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between hover:bg-muted/50 transition-colors"
           >
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-foreground">{sub.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-foreground">{sub.name}</p>
+                {sub.trialEndsAt && new Date(sub.trialEndsAt) > new Date() && (
+                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
+                    Trial
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {sub.category} · Bills on the {getBillingDateLabel(sub.billingDate)}
+                {sub.monthlyUsageCount != null && sub.monthlyUsageCount > 0 && (
+                  <> · Used {sub.monthlyUsageCount}× this month</>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-2">

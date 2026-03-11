@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
@@ -16,7 +17,8 @@ export default async function DashboardLayout({
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/dashboard" className="text-xl font-bold tracking-tight">
+          <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight">
+            <Image src="/logo.svg" alt="SubSave" width={32} height={32} className="rounded-lg" />
             <span className="gradient-text">SubSave</span>
           </Link>
           <nav className="flex items-center gap-3">
