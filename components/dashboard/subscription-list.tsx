@@ -43,11 +43,11 @@ export function SubscriptionList({
 
   return (
     <>
-      <ul className="divide-y rounded-md border">
+      <ul className="divide-y divide-border rounded-xl border border-border overflow-hidden">
         {subscriptions.map((sub) => (
           <li
             key={sub.id}
-            className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between hover:bg-muted/50 transition-colors"
           >
             <div className="min-w-0 flex-1">
               <p className="font-medium text-foreground">{sub.name}</p>

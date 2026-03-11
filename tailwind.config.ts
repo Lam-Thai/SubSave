@@ -49,6 +49,14 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-green-black": "linear-gradient(135deg, hsl(160 84% 39% / 0.12) 0%, transparent 50%, hsl(0 0% 4%) 100%)",
+      },
+      boxShadow: {
+        "green-glow": "0 0 24px -4px hsl(160 84% 39% / 0.25)",
+        "green-glow-sm": "0 0 12px -2px hsl(160 84% 39% / 0.2)",
+      },
     },
   },
   plugins: [],

@@ -205,7 +205,7 @@ export function SubscriptionForm({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} className="btn-gradient rounded-xl">
               {saving ? "Saving…" : editing ? "Save changes" : "Add subscription"}
             </Button>
           </DialogFooter>

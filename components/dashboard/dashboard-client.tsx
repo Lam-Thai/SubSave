@@ -65,8 +65,9 @@ export function DashboardClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-muted-foreground">Loading subscriptions…</p>
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="sr-only">Loading subscriptions…</span>
       </div>
     );
   }
@@ -75,35 +76,35 @@ export function DashboardClient() {
   const subscriptions = data?.subscriptions ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="mt-1 text-muted-foreground">
             Manage your subscriptions and monthly spending
           </p>
         </div>
-        <Button onClick={() => { setEditingId(null); setFormOpen(true); }}>
+        <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="btn-gradient rounded-xl">
           <Plus className="mr-2 h-4 w-4" />
           Add subscription
         </Button>
       </div>
 
-      <Card>
+      <Card className="card-glow overflow-hidden rounded-xl border-border bg-card">
         <CardHeader>
-          <CardTitle>Total monthly cost</CardTitle>
+          <CardTitle className="text-foreground">Total monthly cost</CardTitle>
           <CardDescription>Sum of all subscription costs this month</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-bold text-primary">
+          <p className="text-4xl font-bold gradient-text">
             {formatCurrency(totalMonthly)}
           </p>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="card-glow rounded-xl border-border bg-card">
         <CardHeader>
-          <CardTitle>Subscriptions</CardTitle>
+          <CardTitle className="text-foreground">Subscriptions</CardTitle>
           <CardDescription>
             {subscriptions.length === 0
               ? "Add your first subscription to get started"

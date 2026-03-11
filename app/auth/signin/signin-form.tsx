@@ -34,9 +34,11 @@ export function SignInForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl">Sign in to SubSave</CardTitle>
+      <Card className="w-full max-w-md card-glow rounded-2xl border-border bg-card/95 shadow-green-glow-sm backdrop-blur-sm">
+        <CardHeader className="space-y-1 text-center pb-2">
+          <CardTitle className="text-2xl font-bold">
+            Sign in to <span className="gradient-text">SubSave</span>
+          </CardTitle>
           <CardDescription>
             Use your email or Google to continue
           </CardDescription>
@@ -60,7 +62,7 @@ export function SignInForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full btn-gradient rounded-xl" disabled={loading}>
                 {loading ? "Signing in…" : "Sign in with Email"}
               </Button>
             </form>
@@ -69,7 +71,7 @@ export function SignInForm() {
           {hasGoogle && (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full rounded-xl border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
               onClick={() => signIn("google", { callbackUrl })}
             >
               Continue with Google
@@ -83,7 +85,7 @@ export function SignInForm() {
           )}
 
           <p className="text-center text-sm text-muted-foreground">
-            <Link href="/" className="underline hover:text-foreground">
+            <Link href="/" className="text-primary hover:underline">
               Back to home
             </Link>
           </p>

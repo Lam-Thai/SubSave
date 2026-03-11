@@ -11,7 +11,7 @@ import {
 export default function AuthErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md card-glow rounded-2xl border-border">
         <CardHeader>
           <CardTitle>Authentication error</CardTitle>
           <CardDescription>
@@ -19,7 +19,7 @@ export default function AuthErrorPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild>
+          <Button asChild className="btn-gradient rounded-xl">
             <Link href="/auth/signin">Try again</Link>
           </Button>
         </CardContent>
