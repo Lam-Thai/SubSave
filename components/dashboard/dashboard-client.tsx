@@ -84,21 +84,21 @@ export function DashboardClient() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Manage your subscriptions and monthly spending
           </p>
         </div>
-        <Button onClick={() => { setEditingId(null); setFormOpen(true); }} className="btn-gradient rounded-xl">
-          <Plus className="mr-2 h-4 w-4" />
-          Add subscription
-        </Button>
       </div>
 
       <Card className="card-glow overflow-hidden rounded-xl border-border bg-card">
         <CardHeader>
           <CardTitle className="text-foreground">Total monthly cost</CardTitle>
-          <CardDescription>Sum of all subscription costs this month</CardDescription>
+          <CardDescription>
+            Sum of all subscription costs this month
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-4xl font-bold gradient-text">
@@ -113,12 +113,26 @@ export function DashboardClient() {
 
       <Card className="card-glow rounded-xl border-border bg-card">
         <CardHeader>
-          <CardTitle className="text-foreground">Subscriptions</CardTitle>
-          <CardDescription>
-            {subscriptions.length === 0
-              ? "Add your first subscription to get started"
-              : `${subscriptions.length} subscription${subscriptions.length === 1 ? "" : "s"}`}
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-foreground">Subscriptions</CardTitle>
+              <CardDescription>
+                {subscriptions.length === 0
+                  ? "Add your first subscription to get started"
+                  : `${subscriptions.length} subscription${subscriptions.length === 1 ? "" : "s"}`}
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingId(null);
+                setFormOpen(true);
+              }}
+              className="btn-gradient rounded-xl"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add subscription
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <SubscriptionList
