@@ -185,6 +185,7 @@ export function SharingOptimizer() {
     if (res.ok) {
       setMemberSubName("");
       setMemberSubCost("");
+      setMemberFormOpen(null);
       fetchData();
     }
   }
