@@ -195,8 +195,10 @@ export function DashboardClient() {
             <div className="flex flex-wrap gap-2 pt-1">
               <Button
                 onClick={() => {
-                  setEditingId(null);
-                  setFormOpen(true);
+                  document.getElementById("subscriptions-section")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
                 }}
                 className="btn-gradient rounded-lg"
               >
@@ -342,7 +344,10 @@ export function DashboardClient() {
         <AppChatbox />
       </div>
 
-      <Card className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card">
+      <Card
+        id="subscriptions-section"
+        className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card"
+      >
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
