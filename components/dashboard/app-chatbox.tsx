@@ -1,0 +1,166 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+import { Bot, Loader2, SendHorizontal, UserRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+type ChatRole = "user" | "assistant";
+
+type ChatMessage = {
+  role: ChatRole;
+  content: string;
+};
+
+const initialMessage: ChatMessage = {
+  role: "assistant",
+  content:
+    "Hi, I am your SubSave assistant. Ask me anything about using this app, your subscriptions, trial alerts, usage value, or sharing circles.",
+};
+
+export function AppChatbox() {
+  const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSend = useMemo(
+    () => message.trim().length > 0 && !isSending,
+    [message, isSending]
+  );
+
+  async function submitMessage() {
+    const trimmed = message.trim();
+    if (!trimmed || isSending) return;
+
+    const nextMessages = [...messages, { role: "user" as const, content: trimmed }];
+    setMessages(nextMessages);
+    setMessage("");
+    setError(null);
+    setIsSending(true);
+
+    try {
+      const history = nextMessages.slice(0, -1);
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmed,
+          history,
+        }),
+      });
+
+      const json = (await res.json()) as { reply?: string; error?: string };
+      if (!res.ok || !json.reply) {
+        throw new Error(json.error ?? "Unable to get a response right now.");
+      }
+
+      setMessages((prev) => [...prev, { role: "assistant", content: json.reply as string }]);
+    } catch (submitError) {
+      const messageText =
+        submitError instanceof Error ? submitError.message : "Unexpected chat error.";
+      setError(messageText);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "I could not answer that right now. Please try again in a moment.",
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitMessage();
+  }
+
+  return (
+    <Card className="card-glow rounded-xl border-border bg-card">
+      <CardHeader>
+        <CardTitle className="text-foreground">SubSave AI Assistant</CardTitle>
+        <CardDescription>
+          Chat about how this app works and get help with your subscriptions.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="max-h-80 space-y-3 overflow-y-auto rounded-lg border border-border bg-background/40 p-3">
+          {messages.map((item, index) => (
+            <div
+              key={`${item.role}-${index}`}
+              className={`flex gap-2 ${item.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              {item.role === "assistant" && (
+                <span className="mt-1 text-primary">
+                  <Bot className="h-4 w-4" />
+                </span>
+              )}
+              <div
+                className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                  item.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-card text-foreground"
+                }`}
+              >
+                {item.content}
+              </div>
+              {item.role === "user" && (
+                <span className="mt-1 text-muted-foreground">
+                  <UserRound className="h-4 w-4" />
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                if (canSend) {
+                  void submitMessage();
+                }
+              }
+            }}
+            rows={3}
+            placeholder="Ask about features, trial alerts, costs, or sharing recommendations..."
+            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={isSending}
+          />
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Press Enter to send, Shift+Enter for a new line.
+            </p>
+            <Button type="submit" disabled={!canSend} className="btn-gradient rounded-lg">
+              {isSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Thinking...
+                </>
+              ) : (
+                <>
+                  <SendHorizontal className="mr-2 h-4 w-4" />
+                  Send
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </CardContent>
+    </Card>
+  );
+}

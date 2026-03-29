@@ -15,6 +15,7 @@ import { SubscriptionList } from "@/components/dashboard/subscription-list";
 import { UsageValueMeter } from "@/components/dashboard/usage-value-meter";
 import { TrialTrapDetector } from "@/components/dashboard/trial-trap-detector";
 import { SharingOptimizer } from "@/components/dashboard/sharing-optimizer";
+import { AppChatbox } from "@/components/dashboard/app-chatbox";
 import { Plus } from "lucide-react";
 
 export interface Subscription {
@@ -110,6 +111,8 @@ export function DashboardClient() {
       <TrialTrapDetector />
 
       <UsageValueMeter />
+
+      <AppChatbox />
 
       <Card className="card-glow rounded-xl border-border bg-card">
         <CardHeader>
