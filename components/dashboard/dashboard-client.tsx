@@ -39,6 +39,7 @@ export function DashboardClient() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [usageRefreshToken, setUsageRefreshToken] = useState(0);
 
   async function fetchSubscriptions() {
     try {
@@ -46,9 +47,11 @@ export function DashboardClient() {
       if (!res.ok) throw new Error("Failed to fetch");
       const json: ApiResponse = await res.json();
       setData(json);
+      setUsageRefreshToken((prev) => prev + 1);
     } catch (e) {
       console.error(e);
       setData({ subscriptions: [], totalMonthly: 0 });
+      setUsageRefreshToken((prev) => prev + 1);
     } finally {
       setLoading(false);
     }
@@ -110,7 +113,7 @@ export function DashboardClient() {
 
       <TrialTrapDetector />
 
-      <UsageValueMeter />
+      <UsageValueMeter refreshToken={usageRefreshToken} />
 
       <AppChatbox />
 

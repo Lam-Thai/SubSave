@@ -30,17 +30,22 @@ interface UsageInsight {
   costPerUse: number | null;
 }
 
-export function UsageValueMeter() {
+interface UsageValueMeterProps {
+  refreshToken?: number;
+}
+
+export function UsageValueMeter({ refreshToken = 0 }: UsageValueMeterProps) {
   const [insights, setInsights] = useState<UsageInsight[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     fetch("/api/insights/usage")
       .then((res) => (res.ok ? res.json() : { insights: [] }))
       .then((data) => setInsights(data.insights ?? []))
       .catch(() => setInsights([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshToken]);
 
   if (loading) {
     return (
