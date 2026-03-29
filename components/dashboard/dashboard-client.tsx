@@ -16,7 +16,15 @@ import { UsageValueMeter } from "@/components/dashboard/usage-value-meter";
 import { TrialTrapDetector } from "@/components/dashboard/trial-trap-detector";
 import { SharingOptimizer } from "@/components/dashboard/sharing-optimizer";
 import { AppChatbox } from "@/components/dashboard/app-chatbox";
-import { Plus } from "lucide-react";
+import {
+  CalendarClock,
+  CircleDollarSign,
+  Plus,
+  Sparkles,
+  Target,
+  WalletCards,
+} from "lucide-react";
+import Image from "next/image";
 
 export interface Subscription {
   id: string;
@@ -32,6 +40,18 @@ export interface Subscription {
 interface ApiResponse {
   subscriptions: Subscription[];
   totalMonthly: number;
+}
+
+function getDaysUntilBillingDay(day: number): number {
+  const now = new Date();
+  const currentDay = now.getDate();
+
+  if (day >= currentDay) {
+    return day - currentDay;
+  }
+
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return daysInMonth - currentDay + day;
 }
 
 export function DashboardClient() {
@@ -76,6 +96,23 @@ export function DashboardClient() {
 
   const totalMonthly = data?.totalMonthly ?? 0;
   const subscriptions = data?.subscriptions ?? [];
+  const averageMonthly = subscriptions.length > 0 ? totalMonthly / subscriptions.length : 0;
+
+  const trialsEndingSoon = subscriptions.filter((s) => {
+    if (!s.trialEndsAt) return false;
+    const trialDate = new Date(s.trialEndsAt);
+    const now = new Date();
+    const days = Math.ceil((trialDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return days >= 0 && days <= 7;
+  }).length;
+
+  const upcomingBillings = subscriptions
+    .map((sub) => ({
+      ...sub,
+      daysUntil: getDaysUntilBillingDay(sub.billingDate),
+    }))
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+    .slice(0, 5);
 
   useEffect(() => {
     if (loading) return;
@@ -142,7 +179,104 @@ export function DashboardClient() {
         </div>
       </div>
 
-      <Card className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden rounded-xl border-border bg-card">
+      <Card className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden border-border bg-card">
+        <CardContent className="grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr] md:items-center">
+          <div className="space-y-3">
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-300">
+              <Sparkles className="h-3.5 w-3.5" />
+              Smart subscription command center
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+              Turn recurring costs into clear, actionable insights.
+            </h2>
+            <p className="max-w-xl text-sm text-muted-foreground md:text-base">
+              SubSave helps you track expenses, catch trial traps, and optimize value per use with visual analytics designed for fast decisions.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  setFormOpen(true);
+                }}
+                className="btn-gradient rounded-lg"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add subscription
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-lg border-border"
+                onClick={() => {
+                  document.getElementById("usage-insights")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                <Target className="mr-2 h-4 w-4" />
+                Optimize spending
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-sm md:max-w-none">
+            <Image
+              src="/dashboard-spotlight.svg"
+              alt="SubSave dashboard preview"
+              width={640}
+              height={360}
+              priority
+              className="reveal-up w-full rounded-2xl border border-border/80 shadow-[0_12px_35px_-18px_hsl(160_84%_39%_/_0.45)]"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="card-glow hover-lift reveal-up reveal-delay-2 border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardDescription className="inline-flex items-center gap-2">
+              <WalletCards className="h-4 w-4 text-primary" />
+              Active subscriptions
+            </CardDescription>
+            <CardTitle className="text-2xl text-foreground">{subscriptions.length}</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card className="card-glow hover-lift reveal-up reveal-delay-3 border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardDescription className="inline-flex items-center gap-2">
+              <CircleDollarSign className="h-4 w-4 text-primary" />
+              Average monthly cost
+            </CardDescription>
+            <CardTitle className="text-2xl text-foreground">{formatCurrency(averageMonthly)}</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card className="card-glow hover-lift reveal-up reveal-delay-4 border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardDescription className="inline-flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-primary" />
+              Trials ending in 7 days
+            </CardDescription>
+            <CardTitle className="text-2xl text-foreground">{trialsEndingSoon}</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card className="card-glow hover-lift reveal-up reveal-delay-5 border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardDescription className="inline-flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Spending outlook
+            </CardDescription>
+            <CardTitle className="text-2xl text-foreground">
+              {totalMonthly > 0 ? "Tracked" : "Start now"}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Card className="card-glow hover-lift reveal-up overflow-hidden rounded-xl border-border bg-card">
         <CardHeader>
           <CardTitle className="text-foreground">Total monthly cost</CardTitle>
           <CardDescription>
@@ -160,7 +294,47 @@ export function DashboardClient() {
         <TrialTrapDetector />
       </div>
 
-      <div className="reveal-up reveal-delay-3">
+      <Card className="card-glow hover-lift reveal-up reveal-delay-3 rounded-xl border-border bg-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <CalendarClock className="h-5 w-5 text-primary" />
+            Upcoming billing timeline
+          </CardTitle>
+          <CardDescription>
+            Your next subscription charges, sorted by nearest billing day
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {upcomingBillings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Add subscriptions to unlock your billing timeline.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {upcomingBillings.map((sub) => (
+                <li
+                  key={sub.id}
+                  className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{sub.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {getBillingDateLabel(sub.billingDate)} • {formatCurrency(sub.monthlyCost)}
+                    </p>
+                  </div>
+                  <span className="ml-3 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                    {sub.daysUntil === 0
+                      ? "Today"
+                      : `In ${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <div id="usage-insights" className="reveal-up reveal-delay-3">
         <UsageValueMeter refreshToken={usageRefreshToken} />
       </div>
 
