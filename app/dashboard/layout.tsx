@@ -18,8 +18,8 @@ export default async function DashboardLayout({
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold tracking-tight">
-            <Image src="/logo.svg" alt="SubSave" width={32} height={32} className="rounded-lg" />
-            <span className="gradient-text">SubSave</span>
+            <Image src="/logo.svg" alt="SubSave" width={32} height={32} className="logo-pulse rounded-lg" />
+            <span className="gradient-text gradient-text-flow">SubSave</span>
           </Link>
           <nav className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground max-w-[180px] truncate sm:max-w-none">

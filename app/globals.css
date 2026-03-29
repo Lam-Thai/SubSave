@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes logo-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 hsl(160 84% 39% / 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px hsl(160 84% 39% / 0.38));
+  }
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
 @layer base {
   :root {
     /* Green & black gradient theme */
@@ -51,6 +92,45 @@
 }
 
 @layer utilities {
+  .page-enter {
+    animation: page-enter 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .reveal-up {
+    opacity: 0;
+    animation: reveal-up 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .reveal-delay-1 {
+    animation-delay: 70ms;
+  }
+  .reveal-delay-2 {
+    animation-delay: 130ms;
+  }
+  .reveal-delay-3 {
+    animation-delay: 190ms;
+  }
+  .reveal-delay-4 {
+    animation-delay: 250ms;
+  }
+  .reveal-delay-5 {
+    animation-delay: 310ms;
+  }
+  .reveal-delay-6 {
+    animation-delay: 370ms;
+  }
+  .hover-lift {
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 1px hsl(var(--border)), 0 14px 34px -16px hsl(160 84% 39% / 0.45);
+  }
+  .logo-pulse {
+    animation: logo-glow 3.8s ease-in-out infinite;
+  }
+  .gradient-text-flow {
+    background-size: 220% 220%;
+    animation: gradient-flow 5s linear infinite alternate;
+  }
   .gradient-bg {
     background: linear-gradient(135deg, hsl(0 0% 4%) 0%, hsl(160 50% 8%) 50%, hsl(0 0% 4%) 100%);
   }
@@ -68,5 +148,16 @@
   .btn-gradient:hover {
     background: linear-gradient(135deg, hsl(160 84% 44%) 0%, hsl(160 84% 36%) 100%);
     box-shadow: 0 4px 20px -4px hsl(160 84% 39% / 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

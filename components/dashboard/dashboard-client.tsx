@@ -85,8 +85,8 @@ export function DashboardClient() {
   const subscriptions = data?.subscriptions ?? [];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="page-enter space-y-8">
+      <div className="reveal-up flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Dashboard
@@ -97,7 +97,7 @@ export function DashboardClient() {
         </div>
       </div>
 
-      <Card className="card-glow overflow-hidden rounded-xl border-border bg-card">
+      <Card className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden rounded-xl border-border bg-card">
         <CardHeader>
           <CardTitle className="text-foreground">Total monthly cost</CardTitle>
           <CardDescription>
@@ -111,13 +111,19 @@ export function DashboardClient() {
         </CardContent>
       </Card>
 
-      <TrialTrapDetector />
+      <div className="reveal-up reveal-delay-2">
+        <TrialTrapDetector />
+      </div>
 
-      <UsageValueMeter refreshToken={usageRefreshToken} />
+      <div className="reveal-up reveal-delay-3">
+        <UsageValueMeter refreshToken={usageRefreshToken} />
+      </div>
 
-      <AppChatbox />
+      <div className="reveal-up reveal-delay-4">
+        <AppChatbox />
+      </div>
 
-      <Card className="card-glow rounded-xl border-border bg-card">
+      <Card className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -149,7 +155,9 @@ export function DashboardClient() {
         </CardContent>
       </Card>
 
-      <SharingOptimizer />
+      <div className="reveal-up reveal-delay-6">
+        <SharingOptimizer />
+      </div>
 
       <SubscriptionForm
         open={formOpen}
