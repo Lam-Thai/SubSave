@@ -49,9 +49,6 @@ export function UsageValueMeter() {
   }
 
   const withUsage = insights.filter((i) => i.costPerUse != null);
-  if (insights.length === 0) {
-    return null;
-  }
 
   return (
     <Card className="card-glow rounded-xl border-border bg-card">
@@ -65,7 +62,11 @@ export function UsageValueMeter() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {withUsage.length === 0 ? (
+        {insights.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No subscriptions yet. Add your first subscription to start tracking usage value.
+          </p>
+        ) : withUsage.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Add &quot;Times used this month&quot; in Edit for any subscription to see cost-per-use insights.
           </p>
