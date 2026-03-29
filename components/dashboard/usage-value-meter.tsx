@@ -10,6 +10,16 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart3 } from "lucide-react";
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  BarChart,
+} from "recharts";
 
 interface UsageInsight {
   id: string;
@@ -49,6 +59,14 @@ export function UsageValueMeter() {
   }
 
   const withUsage = insights.filter((i) => i.costPerUse != null);
+  const chartData = withUsage
+    .slice()
+    .sort((a, b) => (b.costPerUse ?? 0) - (a.costPerUse ?? 0))
+    .slice(0, 8)
+    .map((i) => ({
+      ...i,
+      shortName: i.name.length > 16 ? `${i.name.slice(0, 16)}...` : i.name,
+    }));
 
   return (
     <Card className="card-glow rounded-xl border-border bg-card">
@@ -71,25 +89,65 @@ export function UsageValueMeter() {
             Add &quot;Times used this month&quot; in Edit for any subscription to see cost-per-use insights.
           </p>
         ) : (
-          <ul className="space-y-2">
-            {withUsage.map((i) => (
-              <li
-                key={i.id}
-                className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm"
-              >
-                <span className="font-medium text-foreground">{i.name}</span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  — You paid {formatCurrency(i.monthlyCost)} and used it {i.monthlyUsageCount} time
-                  {i.monthlyUsageCount === 1 ? "" : "s"} this month (
-                  <span className="text-primary font-medium">
-                    {formatCurrency(i.costPerUse!)} per use
-                  </span>
-                  ).
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4">
+            <div className="h-72 w-full rounded-lg border border-border bg-background/40 p-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis
+                    dataKey="shortName"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={false}
+                    interval={0}
+                    angle={-18}
+                    textAnchor="end"
+                    height={52}
+                  />
+                  <YAxis
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={false}
+                    tickFormatter={(value) => formatCurrency(Number(value))}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--muted) / 0.35)" }}
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "0.75rem",
+                      color: "hsl(var(--foreground))",
+                    }}
+                    formatter={(value: number, _name, payload) => {
+                      const row = payload?.payload as UsageInsight | undefined;
+                      if (!row) return [formatCurrency(Number(value)), "Cost / use"];
+                      return [
+                        `${formatCurrency(Number(value))} per use`,
+                        `${row.monthlyUsageCount} use${row.monthlyUsageCount === 1 ? "" : "s"}`,
+                      ];
+                    }}
+                    labelFormatter={(_label, payload) => {
+                      const row = payload?.[0]?.payload as UsageInsight | undefined;
+                      if (!row) return "Subscription";
+                      return `${row.name} (${formatCurrency(row.monthlyCost)} monthly)`;
+                    }}
+                  />
+                  <Bar dataKey="costPerUse" radius={[8, 8, 0, 0]}>
+                    {chartData.map((item, index) => (
+                      <Cell
+                        key={`${item.id}-${index}`}
+                        fill={index === 0 ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Showing up to 8 subscriptions with usage data. Highest cost-per-use is highlighted.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
