@@ -162,11 +162,7 @@ function createQuotaFallbackReply(message: string): string {
     ? matched.answer
     : "SubSave helps track subscription spending, detect trial traps, evaluate value via cost-per-use, and optimize sharing with circles.";
 
-  return [
-    base,
-    "Gemini is temporarily unavailable because this project's API quota is exhausted.",
-    "Enable billing or increase Gemini API quota in Google AI Studio / Google Cloud to restore full AI responses.",
-  ].join(" ");
+  return base;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -227,7 +223,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({
         reply: createQuotaFallbackReply(parsed.data.message),
         providerStatus: "quota_exhausted",
-        providerMessage: errorText || geminiResponse.statusText,
+        providerMessage:
+          "AI provider quota exhausted. Enable billing or increase Gemini API quota in Google AI Studio / Google Cloud.",
+        providerDebug: errorText || geminiResponse.statusText,
       });
     }
 

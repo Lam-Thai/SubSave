@@ -10,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ChatRole = "user" | "assistant";
 
@@ -29,6 +37,7 @@ export function AppChatbox() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorOpen, setErrorOpen] = useState(false);
 
   const canSend = useMemo(
     () => message.trim().length > 0 && !isSending,
@@ -43,6 +52,7 @@ export function AppChatbox() {
     setMessages(nextMessages);
     setMessage("");
     setError(null);
+    setErrorOpen(false);
     setIsSending(true);
 
     try {
@@ -56,24 +66,27 @@ export function AppChatbox() {
         }),
       });
 
-      const json = (await res.json()) as { reply?: string; error?: string };
+      const json = (await res.json()) as {
+        reply?: string;
+        error?: string;
+        providerStatus?: string;
+        providerMessage?: string;
+      };
       if (!res.ok || !json.reply) {
         throw new Error(json.error ?? "Unable to get a response right now.");
       }
 
       setMessages((prev) => [...prev, { role: "assistant", content: json.reply as string }]);
+
+      if (json.providerStatus) {
+        setError(json.providerMessage ?? "The AI provider reported an issue.");
+        setErrorOpen(true);
+      }
     } catch (submitError) {
       const messageText =
         submitError instanceof Error ? submitError.message : "Unexpected chat error.";
       setError(messageText);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I could not answer that right now. Please try again in a moment.",
-        },
-      ]);
+      setErrorOpen(true);
     } finally {
       setIsSending(false);
     }
@@ -158,9 +171,23 @@ export function AppChatbox() {
             </Button>
           </div>
         </form>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
       </CardContent>
+
+      <Dialog open={errorOpen} onOpenChange={setErrorOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chat Error</DialogTitle>
+            <DialogDescription>
+              {error ?? "Something went wrong while sending your message."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setErrorOpen(false)} className="btn-gradient rounded-lg">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
