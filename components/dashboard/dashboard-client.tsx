@@ -363,10 +363,6 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           <UsageValueMeter subscriptions={subscriptions} />
         </div>
 
-        <div className="reveal-up reveal-delay-4 h-full [&>*]:h-full">
-          <AppChatbox />
-        </div>
-
         <div className="reveal-up reveal-delay-6 h-full [&>*]:h-full">
           <SharingOptimizer />
         </div>
@@ -405,6 +401,10 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
             />
           </CardContent>
         </Card>
+
+        <div className="reveal-up reveal-delay-6 xl:col-span-2 min-h-[430px] [&>*]:h-full">
+          <AppChatbox />
+        </div>
       </div>
 
       <SubscriptionForm
