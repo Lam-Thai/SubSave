@@ -301,6 +301,11 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const isFirstDemoStep = demoStepIndex === 0;
   const isLastDemoStep = demoStepIndex === demoSteps.length - 1;
 
+  function getDemoFocusClass(targetId: string): string {
+    if (!demoOpen || currentDemoStep?.targetId !== targetId) return "";
+    return "ring-2 ring-primary/60 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_hsl(var(--primary)_/_0.25),0_0_32px_-12px_hsl(var(--primary)_/_0.55)] transition-all duration-300";
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -323,7 +328,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         </div>
       </div>
 
-      <Card id="hero-command-center" className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden border-border bg-card">
+      <Card id="hero-command-center" className={`card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden border-border bg-card ${getDemoFocusClass("hero-command-center")}`}>
         <CardContent className="grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr] md:items-center">
           <div className="space-y-3">
             <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-300">
@@ -432,7 +437,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </div>
         </div>
 
-        <Card id="total-monthly-section" className="card-glow hover-lift reveal-up h-full overflow-hidden rounded-xl border-border bg-card">
+        <Card id="total-monthly-section" className={`card-glow hover-lift reveal-up h-full overflow-hidden rounded-xl border-border bg-card ${getDemoFocusClass("total-monthly-section")}`}>
           <CardHeader>
             <CardTitle className="text-foreground">Total monthly cost</CardTitle>
             <CardDescription>
@@ -446,7 +451,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <Card id="billing-timeline-section" className="card-glow hover-lift reveal-up reveal-delay-3 h-full rounded-xl border-border bg-card">
+        <Card id="billing-timeline-section" className={`card-glow hover-lift reveal-up reveal-delay-3 h-full rounded-xl border-border bg-card ${getDemoFocusClass("billing-timeline-section")}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <CalendarClock className="h-5 w-5 text-primary" />
@@ -487,22 +492,22 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         </Card>
 
         {hasTrialAlerts && (
-          <div id="trial-trap-section" className="reveal-up reveal-delay-2 h-full [&>*]:h-full">
+          <div id="trial-trap-section" className={`reveal-up reveal-delay-2 h-full [&>*]:h-full rounded-xl ${getDemoFocusClass("trial-trap-section")}`}>
             <TrialTrapDetector subscriptions={subscriptions} />
           </div>
         )}
 
-        <div id="usage-insights" className="reveal-up reveal-delay-3 h-full [&>*]:h-full">
+        <div id="usage-insights" className={`reveal-up reveal-delay-3 h-full [&>*]:h-full rounded-xl ${getDemoFocusClass("usage-insights")}`}>
           <UsageValueMeter subscriptions={subscriptions} />
         </div>
 
-        <div id="sharing-optimizer-section" className="reveal-up reveal-delay-6 h-full [&>*]:h-full">
+        <div id="sharing-optimizer-section" className={`reveal-up reveal-delay-6 h-full [&>*]:h-full rounded-xl ${getDemoFocusClass("sharing-optimizer-section")}`}>
           <SharingOptimizer />
         </div>
 
         <Card
           id="subscriptions-section"
-          className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card xl:col-span-2"
+          className={`card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card xl:col-span-2 ${getDemoFocusClass("subscriptions-section")}`}
         >
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -535,7 +540,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <div id="ai-chat-section" className="reveal-up reveal-delay-6 xl:col-span-2 min-h-[430px] [&>*]:h-full">
+        <div id="ai-chat-section" className={`reveal-up reveal-delay-6 xl:col-span-2 min-h-[430px] [&>*]:h-full rounded-xl ${getDemoFocusClass("ai-chat-section")}`}>
           <AppChatbox />
         </div>
       </div>
