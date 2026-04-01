@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -90,7 +89,6 @@ function getDaysUntilBillingDay(day: number): number {
 }
 
 export function DashboardClient({ initialData }: DashboardClientProps) {
-  const searchParams = useSearchParams();
   const [data, setData] = useState<ApiResponse>(initialData);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -101,7 +99,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const [demoPopupPosition, setDemoPopupPosition] = useState<DemoPopupPosition>({ top: 80, left: 24 });
   const [demoPopupArrow, setDemoPopupArrow] = useState<DemoPopupArrow>({ side: "left", offset: 56 });
   const previousAnimatedTotalRef = useRef(0);
-  const demoStartedFromQueryRef = useRef(false);
+  const demoStartedFromHashRef = useRef(false);
 
   async function fetchSubscriptions() {
     setLoading(true);
@@ -284,11 +282,17 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   }, [loading, totalMonthly]);
 
   useEffect(() => {
-    if (searchParams.get("demo") === "1" && !demoStartedFromQueryRef.current) {
-      demoStartedFromQueryRef.current = true;
+    const maybeStartDemoFromHash = () => {
+      if (window.location.hash !== "#demo" || demoStartedFromHashRef.current) return;
+      demoStartedFromHashRef.current = true;
       startDemo(0);
-    }
-  }, [searchParams, startDemo]);
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    };
+
+    maybeStartDemoFromHash();
+    window.addEventListener("hashchange", maybeStartDemoFromHash);
+    return () => window.removeEventListener("hashchange", maybeStartDemoFromHash);
+  }, [startDemo]);
 
   useEffect(() => {
     if (!demoOpen) return;
