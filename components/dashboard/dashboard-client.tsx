@@ -72,6 +72,11 @@ interface DemoPopupPosition {
   left: number;
 }
 
+interface DemoPopupArrow {
+  side: "left" | "right" | "top";
+  offset: number;
+}
+
 function getDaysUntilBillingDay(day: number): number {
   const now = new Date();
   const currentDay = now.getDate();
@@ -94,6 +99,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
   const [demoPopupPosition, setDemoPopupPosition] = useState<DemoPopupPosition>({ top: 80, left: 24 });
+  const [demoPopupArrow, setDemoPopupArrow] = useState<DemoPopupArrow>({ side: "left", offset: 56 });
   const previousAnimatedTotalRef = useRef(0);
   const demoStartedFromQueryRef = useRef(false);
 
@@ -311,27 +317,48 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       const gap = 16;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
+      const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+      const targetCenterY = rect.top + rect.height / 2;
+      const targetCenterX = rect.left + rect.width / 2;
+      let placement: "right" | "left" | "center" = "right";
 
       let left = rect.right + gap;
       if (left + popupWidth > viewportWidth - 16) {
+        placement = "left";
         left = rect.left - popupWidth - gap;
       }
       if (left < 16) {
+        placement = "center";
         left = Math.min(
           Math.max(16, rect.left + rect.width / 2 - popupWidth / 2),
           viewportWidth - popupWidth - 16,
         );
       }
 
-      let top = rect.top;
-      if (top + popupHeight > viewportHeight - 16) {
-        top = viewportHeight - popupHeight - 16;
-      }
-      if (top < 16) {
-        top = 16;
-      }
+      const top = clamp(targetCenterY - popupHeight / 2, 16, viewportHeight - popupHeight - 16);
 
       setDemoPopupPosition({ top, left });
+
+      if (placement === "right") {
+        setDemoPopupArrow({
+          side: "left",
+          offset: clamp(targetCenterY - top, 24, popupHeight - 24),
+        });
+        return;
+      }
+
+      if (placement === "left") {
+        setDemoPopupArrow({
+          side: "right",
+          offset: clamp(targetCenterY - top, 24, popupHeight - 24),
+        });
+        return;
+      }
+
+      setDemoPopupArrow({
+        side: "top",
+        offset: clamp(targetCenterX - left, 24, popupWidth - 24),
+      });
     };
 
     updateDemoPopupPosition();
@@ -605,9 +632,24 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           <div className="pointer-events-none fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" />
 
           <div
-            className="fixed z-50 w-[min(420px,calc(100vw-2rem))] rounded-2xl border border-border bg-card/95 p-5 shadow-[0_20px_70px_-25px_hsl(var(--primary)_/_0.55)] backdrop-blur"
+            className="fixed z-50 w-[min(420px,calc(100vw-2rem))] overflow-visible rounded-2xl border border-border bg-card/95 p-5 shadow-[0_20px_70px_-25px_hsl(var(--primary)_/_0.55)] backdrop-blur"
             style={{ top: demoPopupPosition.top, left: demoPopupPosition.left }}
           >
+            <div
+              className={`absolute h-4 w-4 rotate-45 border border-border bg-card/95 ${
+                demoPopupArrow.side === "left"
+                  ? "-left-2 border-r-0 border-t-0"
+                  : demoPopupArrow.side === "right"
+                    ? "-right-2 border-l-0 border-b-0"
+                    : "-top-2 border-r-0 border-b-0"
+              }`}
+              style={
+                demoPopupArrow.side === "top"
+                  ? { left: `${demoPopupArrow.offset}px` }
+                  : { top: `${demoPopupArrow.offset}px` }
+              }
+            />
+
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
                 Demo mode: Step {demoStepIndex + 1} of {demoSteps.length}
