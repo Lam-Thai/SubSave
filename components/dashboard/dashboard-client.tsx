@@ -312,28 +312,30 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       if (!target) return;
 
       const rect = target.getBoundingClientRect();
-      const popupWidth = 420;
       const popupHeight = 280;
       const gap = 16;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
+      const popupWidth = Math.min(420, viewportWidth - 32);
       const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
       const targetCenterY = rect.top + rect.height / 2;
-      const targetCenterX = rect.left + rect.width / 2;
-      let placement: "right" | "left" | "center" = "right";
+      const spaceRight = viewportWidth - rect.right;
+      const spaceLeft = rect.left;
 
-      let left = rect.right + gap;
-      if (left + popupWidth > viewportWidth - 16) {
+      let placement: "right" | "left" = spaceRight >= spaceLeft ? "right" : "left";
+      if (placement === "right" && spaceRight < popupWidth + gap && spaceLeft >= popupWidth + gap) {
         placement = "left";
-        left = rect.left - popupWidth - gap;
       }
-      if (left < 16) {
-        placement = "center";
-        left = Math.min(
-          Math.max(16, rect.left + rect.width / 2 - popupWidth / 2),
-          viewportWidth - popupWidth - 16,
-        );
+      if (placement === "left" && spaceLeft < popupWidth + gap && spaceRight >= popupWidth + gap) {
+        placement = "right";
       }
+
+      let left =
+        placement === "right"
+          ? rect.right + gap
+          : rect.left - popupWidth - gap;
+
+      left = clamp(left, 16, viewportWidth - popupWidth - 16);
 
       const top = clamp(targetCenterY - popupHeight / 2, 16, viewportHeight - popupHeight - 16);
 
@@ -356,8 +358,8 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       }
 
       setDemoPopupArrow({
-        side: "top",
-        offset: clamp(targetCenterX - left, 24, popupWidth - 24),
+        side: "right",
+        offset: clamp(targetCenterY - top, 24, popupHeight - 24),
       });
     };
 
@@ -370,6 +372,43 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       window.removeEventListener("scroll", updateDemoPopupPosition, true);
     };
   }, [demoOpen, demoStepIndex, demoSteps]);
+
+  useEffect(() => {
+    if (!demoOpen) return;
+
+    const preventScroll = (event: Event) => {
+      event.preventDefault();
+    };
+
+    const preventKeyScroll = (event: KeyboardEvent) => {
+      const blockedKeys = [
+        "ArrowUp",
+        "ArrowDown",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+        " ",
+      ];
+      if (blockedKeys.includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    window.addEventListener("wheel", preventScroll, { passive: false });
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+    window.addEventListener("keydown", preventKeyScroll);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+      window.removeEventListener("keydown", preventKeyScroll);
+    };
+  }, [demoOpen]);
 
   const currentDemoStep = demoSteps[demoStepIndex];
   const isFirstDemoStep = demoStepIndex === 0;
@@ -639,15 +678,9 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               className={`absolute h-4 w-4 rotate-45 border border-border bg-card/95 ${
                 demoPopupArrow.side === "left"
                   ? "-left-2 border-r-0 border-t-0"
-                  : demoPopupArrow.side === "right"
-                    ? "-right-2 border-l-0 border-b-0"
-                    : "-top-2 border-r-0 border-b-0"
+                  : "-right-2 border-l-0 border-b-0"
               }`}
-              style={
-                demoPopupArrow.side === "top"
-                  ? { left: `${demoPopupArrow.offset}px` }
-                  : { top: `${demoPopupArrow.offset}px` }
-              }
+              style={{ top: `${demoPopupArrow.offset}px` }}
             />
 
             <div className="space-y-2">
