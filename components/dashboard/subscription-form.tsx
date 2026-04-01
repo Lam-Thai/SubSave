@@ -99,8 +99,8 @@ export function SubscriptionForm({
       setError("Billing date must be between 1 and 31");
       return;
     }
-    const usageCount = monthlyUsageCount === "" ? undefined : parseInt(monthlyUsageCount, 10);
-    if (monthlyUsageCount !== "" && (Number.isNaN(usageCount) || usageCount < 0)) {
+    const usageCount = monthlyUsageCount === "" ? null : parseInt(monthlyUsageCount, 10);
+    if (usageCount != null && (Number.isNaN(usageCount) || usageCount < 0)) {
       setError("Usage count must be 0 or more");
       return;
     }
@@ -112,7 +112,7 @@ export function SubscriptionForm({
         monthlyCost: cost,
         billingDate: date,
         trialEndsAt: trialEndsAt ? new Date(trialEndsAt).toISOString() : null,
-        monthlyUsageCount: usageCount ?? null,
+        monthlyUsageCount: usageCount,
       };
       if (editing) {
         const res = await fetch(`/api/subscriptions/${editing.id}`, {

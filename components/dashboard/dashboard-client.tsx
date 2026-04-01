@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +13,6 @@ import {
 import { formatCurrency, getBillingDateLabel } from "@/lib/utils";
 import { SubscriptionForm } from "@/components/dashboard/subscription-form";
 import { SubscriptionList } from "@/components/dashboard/subscription-list";
-import { UsageValueMeter } from "@/components/dashboard/usage-value-meter";
-import { TrialTrapDetector } from "@/components/dashboard/trial-trap-detector";
-import { SharingOptimizer } from "@/components/dashboard/sharing-optimizer";
-import { AppChatbox } from "@/components/dashboard/app-chatbox";
 import {
   CalendarClock,
   CircleDollarSign,
@@ -25,6 +22,22 @@ import {
   WalletCards,
 } from "lucide-react";
 import Image from "next/image";
+
+const UsageValueMeter = dynamic(
+  () => import("@/components/dashboard/usage-value-meter").then((mod) => mod.UsageValueMeter),
+);
+
+const TrialTrapDetector = dynamic(
+  () => import("@/components/dashboard/trial-trap-detector").then((mod) => mod.TrialTrapDetector),
+);
+
+const SharingOptimizer = dynamic(
+  () => import("@/components/dashboard/sharing-optimizer").then((mod) => mod.SharingOptimizer),
+);
+
+const AppChatbox = dynamic(
+  () => import("@/components/dashboard/app-chatbox").then((mod) => mod.AppChatbox),
+);
 
 export interface Subscription {
   id: string;
@@ -42,6 +55,10 @@ interface ApiResponse {
   totalMonthly: number;
 }
 
+interface DashboardClientProps {
+  initialData: ApiResponse;
+}
+
 function getDaysUntilBillingDay(day: number): number {
   const now = new Date();
   const currentDay = now.getDate();
@@ -54,34 +71,27 @@ function getDaysUntilBillingDay(day: number): number {
   return daysInMonth - currentDay + day;
 }
 
-export function DashboardClient() {
-  const [data, setData] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+export function DashboardClient({ initialData }: DashboardClientProps) {
+  const [data, setData] = useState<ApiResponse>(initialData);
+  const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [usageRefreshToken, setUsageRefreshToken] = useState(0);
   const [animatedTotal, setAnimatedTotal] = useState(0);
   const previousAnimatedTotalRef = useRef(0);
 
   async function fetchSubscriptions() {
+    setLoading(true);
     try {
-      const res = await fetch("/api/subscriptions");
+      const res = await fetch("/api/subscriptions", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch");
       const json: ApiResponse = await res.json();
       setData(json);
-      setUsageRefreshToken((prev) => prev + 1);
     } catch (e) {
       console.error(e);
-      setData({ subscriptions: [], totalMonthly: 0 });
-      setUsageRefreshToken((prev) => prev + 1);
     } finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
 
   function handleSaved() {
     setFormOpen(false);
@@ -94,8 +104,8 @@ export function DashboardClient() {
     setFormOpen(true);
   }
 
-  const totalMonthly = data?.totalMonthly ?? 0;
-  const subscriptions = data?.subscriptions ?? [];
+  const totalMonthly = data.totalMonthly;
+  const subscriptions = data.subscriptions;
   const averageMonthly = subscriptions.length > 0 ? totalMonthly / subscriptions.length : 0;
 
   const trialsEndingSoon = subscriptions.filter((s) => {
@@ -293,7 +303,7 @@ export function DashboardClient() {
       </Card>
 
       <div className="reveal-up reveal-delay-2">
-        <TrialTrapDetector />
+        <TrialTrapDetector subscriptions={subscriptions} />
       </div>
 
       <Card className="card-glow hover-lift reveal-up reveal-delay-3 rounded-xl border-border bg-card">
@@ -337,7 +347,7 @@ export function DashboardClient() {
       </Card>
 
       <div id="usage-insights" className="reveal-up reveal-delay-3">
-        <UsageValueMeter refreshToken={usageRefreshToken} />
+        <UsageValueMeter subscriptions={subscriptions} />
       </div>
 
       <div className="reveal-up reveal-delay-4">

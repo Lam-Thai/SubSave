@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
+import type { Subscription } from "./dashboard-client";
 
 interface TrialAlert {
   id: string;
@@ -20,33 +21,36 @@ interface TrialAlert {
   message: string;
 }
 
-export function TrialTrapDetector() {
-  const [alerts, setAlerts] = useState<TrialAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+export function TrialTrapDetector({ subscriptions }: { subscriptions: Subscription[] }) {
+  const alerts = useMemo<TrialAlert[]>(() => {
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() + 14);
 
-  useEffect(() => {
-    fetch("/api/insights/trials")
-      .then((res) => (res.ok ? res.json() : { alerts: [] }))
-      .then((data) => setAlerts(data.alerts ?? []))
-      .catch(() => setAlerts([]))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <Card className="card-glow rounded-xl border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <AlertTriangle className="h-5 w-5 text-primary" />
-            Trial alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </CardContent>
-      </Card>
-    );
-  }
+    return subscriptions
+      .filter((sub) => {
+        if (!sub.trialEndsAt) return false;
+        const trialEnd = new Date(sub.trialEndsAt);
+        return trialEnd >= now && trialEnd <= cutoff;
+      })
+      .sort((a, b) => {
+        const aTime = new Date(a.trialEndsAt as string).getTime();
+        const bTime = new Date(b.trialEndsAt as string).getTime();
+        return aTime - bTime;
+      })
+      .map((sub) => {
+        const trialEnd = new Date(sub.trialEndsAt as string);
+        const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          id: sub.id,
+          name: sub.name,
+          monthlyCost: sub.monthlyCost,
+          trialEndsAt: trialEnd.toISOString(),
+          daysLeft,
+          message: `Your free trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"} - avoid a $${sub.monthlyCost.toFixed(2)} charge.`,
+        };
+      });
+  }, [subscriptions]);
 
   if (alerts.length === 0) {
     return null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ import {
   YAxis,
   BarChart,
 } from "recharts";
+import type { Subscription } from "./dashboard-client";
 
 interface UsageInsight {
   id: string;
@@ -35,38 +36,28 @@ interface UsageInsight {
 }
 
 interface UsageValueMeterProps {
-  refreshToken?: number;
+  subscriptions: Subscription[];
 }
 
-export function UsageValueMeter({ refreshToken = 0 }: UsageValueMeterProps) {
-  const [insights, setInsights] = useState<UsageInsight[]>([]);
-  const [loading, setLoading] = useState(true);
+export function UsageValueMeter({ subscriptions }: UsageValueMeterProps) {
   const [view, setView] = useState<"costPerUse" | "costVsUsage">("costPerUse");
 
-  useEffect(() => {
-    setLoading(true);
-    fetch("/api/insights/usage")
-      .then((res) => (res.ok ? res.json() : { insights: [] }))
-      .then((data) => setInsights(data.insights ?? []))
-      .catch(() => setInsights([]))
-      .finally(() => setLoading(false));
-  }, [refreshToken]);
-
-  if (loading) {
-    return (
-      <Card className="card-glow rounded-xl border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Usage & value
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const insights = useMemo<UsageInsight[]>(
+    () =>
+      subscriptions.map((sub) => {
+        const uses = sub.monthlyUsageCount ?? 0;
+        const costPerUse = uses > 0 ? sub.monthlyCost / uses : null;
+        return {
+          id: sub.id,
+          name: sub.name,
+          category: sub.category,
+          monthlyCost: sub.monthlyCost,
+          monthlyUsageCount: uses,
+          costPerUse: costPerUse != null ? Math.round(costPerUse * 100) / 100 : null,
+        };
+      }),
+    [subscriptions],
+  );
 
   const withUsage = insights.filter((i) => i.costPerUse != null);
   const chartData = withUsage
@@ -161,11 +152,12 @@ export function UsageValueMeter({ refreshToken = 0 }: UsageValueMeterProps) {
                             borderRadius: "0.75rem",
                             color: "hsl(var(--foreground))",
                           }}
-                          formatter={(value: number, _name, payload) => {
+                          formatter={(value, _name, payload) => {
                             const row = payload?.payload as UsageInsight | undefined;
+                            const numericValue = Number(value ?? 0);
                             if (!row) return [formatCurrency(Number(value)), "Cost / use"];
                             return [
-                              `${formatCurrency(Number(value))} per use`,
+                              `${formatCurrency(numericValue)} per use`,
                               `${row.monthlyUsageCount} use${row.monthlyUsageCount === 1 ? "" : "s"}`,
                             ];
                           }}
@@ -231,13 +223,15 @@ export function UsageValueMeter({ refreshToken = 0 }: UsageValueMeterProps) {
                           borderRadius: "0.75rem",
                           color: "hsl(var(--foreground))",
                         }}
-                        formatter={(value: number, name) => {
-                          if (name === "Monthly cost") {
-                            return [formatCurrency(Number(value)), name];
+                        formatter={(value, name) => {
+                          const numericValue = Number(value ?? 0);
+                          const metricName = String(name ?? "");
+                          if (metricName === "Monthly cost") {
+                            return [formatCurrency(numericValue), metricName];
                           }
                           return [
-                            `${Number(value)} use${Number(value) === 1 ? "" : "s"}`,
-                            name,
+                            `${numericValue} use${numericValue === 1 ? "" : "s"}`,
+                            metricName,
                           ];
                         }}
                         labelFormatter={(_label, payload) => {
