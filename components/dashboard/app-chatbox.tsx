@@ -32,6 +32,17 @@ const initialMessage: ChatMessage = {
     "Hi, I am your SubSave assistant. Ask me anything about using this app, your subscriptions, trial alerts, usage value, or sharing circles.",
 };
 
+const suggestedQuestions = [
+  "How can I reduce my monthly subscription spending quickly?",
+  "Which subscriptions should I cancel first based on low usage?",
+  "How does the Trial Trap Detector work?",
+  "What does Cost per use mean in Usage & value?",
+  "How can I use Sharing Optimizer to save money?",
+  "What categories should I use to keep subscriptions organized?",
+  "How do I decide if a subscription is worth keeping?",
+  "What is the best weekly routine to manage subscriptions in this app?",
+];
+
 export function AppChatbox() {
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [message, setMessage] = useState("");
@@ -97,6 +108,11 @@ export function AppChatbox() {
     await submitMessage();
   }
 
+  function handleSuggestionClick(question: string) {
+    if (isSending) return;
+    setMessage(question);
+  }
+
   return (
     <Card className="card-glow rounded-xl border-border bg-card">
       <CardHeader>
@@ -136,6 +152,27 @@ export function AppChatbox() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Suggested questions
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggestedQuestions.map((question) => (
+                <Button
+                  key={question}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full border-border bg-background/40 text-xs"
+                  onClick={() => handleSuggestionClick(question)}
+                  disabled={isSending}
+                >
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
