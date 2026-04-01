@@ -116,6 +116,14 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     return days >= 0 && days <= 7;
   }).length;
 
+  const hasTrialAlerts = subscriptions.some((s) => {
+    if (!s.trialEndsAt) return false;
+    const trialDate = new Date(s.trialEndsAt);
+    const now = new Date();
+    const days = Math.ceil((trialDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return days >= 0 && days <= 14;
+  });
+
   const upcomingBillings = subscriptions
     .map((sub) => ({
       ...sub,
@@ -291,7 +299,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </div>
         </div>
 
-        <Card className="card-glow hover-lift reveal-up overflow-hidden rounded-xl border-border bg-card">
+        <Card className="card-glow hover-lift reveal-up h-full overflow-hidden rounded-xl border-border bg-card">
           <CardHeader>
             <CardTitle className="text-foreground">Total monthly cost</CardTitle>
             <CardDescription>
@@ -305,7 +313,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="card-glow hover-lift reveal-up reveal-delay-3 rounded-xl border-border bg-card">
+        <Card className="card-glow hover-lift reveal-up reveal-delay-3 h-full rounded-xl border-border bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <CalendarClock className="h-5 w-5 text-primary" />
@@ -345,19 +353,21 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <div className="reveal-up reveal-delay-2">
-          <TrialTrapDetector subscriptions={subscriptions} />
-        </div>
+        {hasTrialAlerts && (
+          <div className="reveal-up reveal-delay-2 h-full [&>*]:h-full">
+            <TrialTrapDetector subscriptions={subscriptions} />
+          </div>
+        )}
 
-        <div id="usage-insights" className="reveal-up reveal-delay-3">
+        <div id="usage-insights" className="reveal-up reveal-delay-3 h-full [&>*]:h-full">
           <UsageValueMeter subscriptions={subscriptions} />
         </div>
 
-        <div className="reveal-up reveal-delay-4">
+        <div className="reveal-up reveal-delay-4 h-full [&>*]:h-full">
           <AppChatbox />
         </div>
 
-        <div className="reveal-up reveal-delay-6">
+        <div className="reveal-up reveal-delay-6 h-full [&>*]:h-full">
           <SharingOptimizer />
         </div>
 
