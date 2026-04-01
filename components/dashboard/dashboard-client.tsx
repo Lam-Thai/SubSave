@@ -244,153 +244,157 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="card-glow hover-lift reveal-up reveal-delay-2 border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="inline-flex items-center gap-2">
-              <WalletCards className="h-4 w-4 text-primary" />
-              Active subscriptions
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground">{subscriptions.length}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className="space-y-6 xl:col-span-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="card-glow hover-lift reveal-up reveal-delay-2 border-border bg-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="inline-flex items-center gap-2">
+                  <WalletCards className="h-4 w-4 text-primary" />
+                  Active subscriptions
+                </CardDescription>
+                <CardTitle className="text-2xl text-foreground">{subscriptions.length}</CardTitle>
+              </CardHeader>
+            </Card>
 
-        <Card className="card-glow hover-lift reveal-up reveal-delay-3 border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="inline-flex items-center gap-2">
-              <CircleDollarSign className="h-4 w-4 text-primary" />
-              Average monthly cost
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground">{formatCurrency(averageMonthly)}</CardTitle>
-          </CardHeader>
-        </Card>
+            <Card className="card-glow hover-lift reveal-up reveal-delay-3 border-border bg-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="inline-flex items-center gap-2">
+                  <CircleDollarSign className="h-4 w-4 text-primary" />
+                  Average monthly cost
+                </CardDescription>
+                <CardTitle className="text-2xl text-foreground">{formatCurrency(averageMonthly)}</CardTitle>
+              </CardHeader>
+            </Card>
 
-        <Card className="card-glow hover-lift reveal-up reveal-delay-4 border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="inline-flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-primary" />
-              Trials ending in 7 days
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground">{trialsEndingSoon}</CardTitle>
-          </CardHeader>
-        </Card>
+            <Card className="card-glow hover-lift reveal-up reveal-delay-4 border-border bg-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="inline-flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                  Trials ending in 7 days
+                </CardDescription>
+                <CardTitle className="text-2xl text-foreground">{trialsEndingSoon}</CardTitle>
+              </CardHeader>
+            </Card>
 
-        <Card className="card-glow hover-lift reveal-up reveal-delay-5 border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Spending outlook
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground">
-              {totalMonthly > 0 ? "Tracked" : "Start now"}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <Card className="card-glow hover-lift reveal-up overflow-hidden rounded-xl border-border bg-card">
-        <CardHeader>
-          <CardTitle className="text-foreground">Total monthly cost</CardTitle>
-          <CardDescription>
-            Sum of all subscription costs this month
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-4xl font-bold gradient-text">
-            {formatCurrency(animatedTotal)}
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="reveal-up reveal-delay-2">
-        <TrialTrapDetector subscriptions={subscriptions} />
-      </div>
-
-      <Card className="card-glow hover-lift reveal-up reveal-delay-3 rounded-xl border-border bg-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <CalendarClock className="h-5 w-5 text-primary" />
-            Upcoming billing timeline
-          </CardTitle>
-          <CardDescription>
-            Your next subscription charges, sorted by nearest billing day
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {upcomingBillings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Add subscriptions to unlock your billing timeline.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {upcomingBillings.map((sub) => (
-                <li
-                  key={sub.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{sub.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {getBillingDateLabel(sub.billingDate)} • {formatCurrency(sub.monthlyCost)}
-                    </p>
-                  </div>
-                  <span className="ml-3 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300">
-                    {sub.daysUntil === 0
-                      ? "Today"
-                      : `In ${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <div id="usage-insights" className="reveal-up reveal-delay-3">
-        <UsageValueMeter subscriptions={subscriptions} />
-      </div>
-
-      <div className="reveal-up reveal-delay-4">
-        <AppChatbox />
-      </div>
-
-      <Card
-        id="subscriptions-section"
-        className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card"
-      >
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle className="text-foreground">Subscriptions</CardTitle>
-              <CardDescription>
-                {subscriptions.length === 0
-                  ? "Add your first subscription to get started"
-                  : `${subscriptions.length} subscription${subscriptions.length === 1 ? "" : "s"}`}
-              </CardDescription>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingId(null);
-                setFormOpen(true);
-              }}
-              className="btn-gradient rounded-xl"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add subscription
-            </Button>
+            <Card className="card-glow hover-lift reveal-up reveal-delay-5 border-border bg-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="inline-flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Spending outlook
+                </CardDescription>
+                <CardTitle className="text-2xl text-foreground">
+                  {totalMonthly > 0 ? "Tracked" : "Start now"}
+                </CardTitle>
+              </CardHeader>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          <SubscriptionList
-            subscriptions={subscriptions}
-            onEdit={handleEdit}
-            onDeleted={fetchSubscriptions}
-          />
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="reveal-up reveal-delay-6">
-        <SharingOptimizer />
+        <Card className="card-glow hover-lift reveal-up overflow-hidden rounded-xl border-border bg-card">
+          <CardHeader>
+            <CardTitle className="text-foreground">Total monthly cost</CardTitle>
+            <CardDescription>
+              Sum of all subscription costs this month
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold gradient-text">
+              {formatCurrency(animatedTotal)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="card-glow hover-lift reveal-up reveal-delay-3 rounded-xl border-border bg-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              Upcoming billing timeline
+            </CardTitle>
+            <CardDescription>
+              Your next subscription charges, sorted by nearest billing day
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {upcomingBillings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Add subscriptions to unlock your billing timeline.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingBillings.map((sub) => (
+                  <li
+                    key={sub.id}
+                    className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{sub.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {getBillingDateLabel(sub.billingDate)} • {formatCurrency(sub.monthlyCost)}
+                      </p>
+                    </div>
+                    <span className="ml-3 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                      {sub.daysUntil === 0
+                        ? "Today"
+                        : `In ${sub.daysUntil} day${sub.daysUntil === 1 ? "" : "s"}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="reveal-up reveal-delay-2">
+          <TrialTrapDetector subscriptions={subscriptions} />
+        </div>
+
+        <div id="usage-insights" className="reveal-up reveal-delay-3">
+          <UsageValueMeter subscriptions={subscriptions} />
+        </div>
+
+        <div className="reveal-up reveal-delay-4">
+          <AppChatbox />
+        </div>
+
+        <div className="reveal-up reveal-delay-6">
+          <SharingOptimizer />
+        </div>
+
+        <Card
+          id="subscriptions-section"
+          className="card-glow hover-lift reveal-up reveal-delay-5 rounded-xl border-border bg-card xl:col-span-2"
+        >
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-foreground">Subscriptions</CardTitle>
+                <CardDescription>
+                  {subscriptions.length === 0
+                    ? "Add your first subscription to get started"
+                    : `${subscriptions.length} subscription${subscriptions.length === 1 ? "" : "s"}`}
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  setFormOpen(true);
+                }}
+                className="btn-gradient rounded-xl"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add subscription
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SubscriptionList
+              subscriptions={subscriptions}
+              onEdit={handleEdit}
+              onDeleted={fetchSubscriptions}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <SubscriptionForm
