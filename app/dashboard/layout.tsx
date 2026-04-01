@@ -26,6 +26,9 @@ export default async function DashboardLayout({
               {session.user.email ?? session.user.name}
             </span>
             <Button variant="outline" size="sm" className="rounded-lg border-border" asChild>
+              <Link href="/dashboard?demo=1">Demo</Link>
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-lg border-border" asChild>
               <Link href="/auth/signout">Sign out</Link>
             </Button>
           </nav>

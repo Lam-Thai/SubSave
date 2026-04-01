@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCurrency, getBillingDateLabel } from "@/lib/utils";
 import { SubscriptionForm } from "@/components/dashboard/subscription-form";
 import { SubscriptionList } from "@/components/dashboard/subscription-list";
@@ -59,6 +68,13 @@ interface DashboardClientProps {
   initialData: ApiResponse;
 }
 
+interface DemoStep {
+  id: string;
+  title: string;
+  description: string;
+  targetId: string;
+}
+
 function getDaysUntilBillingDay(day: number): number {
   const now = new Date();
   const currentDay = now.getDate();
@@ -72,12 +88,16 @@ function getDaysUntilBillingDay(day: number): number {
 }
 
 export function DashboardClient({ initialData }: DashboardClientProps) {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<ApiResponse>(initialData);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [animatedTotal, setAnimatedTotal] = useState(0);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
   const previousAnimatedTotalRef = useRef(0);
+  const demoStartedFromQueryRef = useRef(false);
 
   async function fetchSubscriptions() {
     setLoading(true);
@@ -132,6 +152,90 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     .sort((a, b) => a.daysUntil - b.daysUntil)
     .slice(0, 5);
 
+  const demoSteps: DemoStep[] = useMemo(
+    () => [
+      {
+        id: "hero",
+        title: "Hero command center",
+        description:
+          "This is your starting point. Use quick actions here to add a subscription or jump straight to optimization insights.",
+        targetId: "hero-command-center",
+      },
+      {
+        id: "total-monthly",
+        title: "Total monthly cost",
+        description:
+          "This card summarizes your monthly recurring spend. Watch this number to quickly track progress when canceling or downgrading plans.",
+        targetId: "total-monthly-section",
+      },
+      {
+        id: "billing-timeline",
+        title: "Upcoming billing timeline",
+        description:
+          "See what gets charged next so you can decide ahead of time whether to keep, pause, or cancel subscriptions.",
+        targetId: "billing-timeline-section",
+      },
+      ...(hasTrialAlerts
+        ? [
+            {
+              id: "trial-trap",
+              title: "Trial trap detector",
+              description:
+                "This section warns you when trials are about to end so you can avoid surprise renewals.",
+              targetId: "trial-trap-section",
+            },
+          ]
+        : []),
+      {
+        id: "usage-value",
+        title: "Usage and value insights",
+        description:
+          "Compare cost per use and monthly cost vs usage. It helps you spot low-value subscriptions fast.",
+        targetId: "usage-insights",
+      },
+      {
+        id: "sharing",
+        title: "Sharing optimizer",
+        description:
+          "Create trusted circles to identify duplicated services and estimate savings from sharing family plans.",
+        targetId: "sharing-optimizer-section",
+      },
+      {
+        id: "subscriptions",
+        title: "Subscriptions list",
+        description:
+          "Manage your subscriptions here. Add, edit, and delete entries while tracking billing date, trial end, and usage.",
+        targetId: "subscriptions-section",
+      },
+      {
+        id: "chat",
+        title: "AI assistant",
+        description:
+          "Ask app-related questions, request savings strategies, and get guidance on using each section effectively.",
+        targetId: "ai-chat-section",
+      },
+    ],
+    [hasTrialAlerts],
+  );
+
+  const startDemo = useCallback(
+    (stepIndex = 0) => {
+      if (demoSteps.length === 0) return;
+      const safeStepIndex = Math.max(0, Math.min(stepIndex, demoSteps.length - 1));
+      setDemoStepIndex(safeStepIndex);
+      setDemoOpen(true);
+    },
+    [demoSteps.length],
+  );
+
+  function goToNextStep() {
+    setDemoStepIndex((prev) => Math.min(prev + 1, demoSteps.length - 1));
+  }
+
+  function goToPreviousStep() {
+    setDemoStepIndex((prev) => Math.max(prev - 1, 0));
+  }
+
   useEffect(() => {
     if (loading) return;
 
@@ -175,6 +279,28 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     };
   }, [loading, totalMonthly]);
 
+  useEffect(() => {
+    if (searchParams.get("demo") === "1" && !demoStartedFromQueryRef.current) {
+      demoStartedFromQueryRef.current = true;
+      startDemo(0);
+    }
+  }, [searchParams, startDemo]);
+
+  useEffect(() => {
+    if (!demoOpen) return;
+    const step = demoSteps[demoStepIndex];
+    if (!step) return;
+
+    const target = document.getElementById(step.targetId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [demoOpen, demoStepIndex, demoSteps]);
+
+  const currentDemoStep = demoSteps[demoStepIndex];
+  const isFirstDemoStep = demoStepIndex === 0;
+  const isLastDemoStep = demoStepIndex === demoSteps.length - 1;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -197,7 +323,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         </div>
       </div>
 
-      <Card className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden border-border bg-card">
+      <Card id="hero-command-center" className="card-glow hover-lift reveal-up reveal-delay-1 overflow-hidden border-border bg-card">
         <CardContent className="grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr] md:items-center">
           <div className="space-y-3">
             <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-300">
@@ -235,6 +361,13 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               >
                 <Target className="mr-2 h-4 w-4" />
                 Optimize spending
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-lg border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => startDemo(0)}
+              >
+                Demo mode
               </Button>
             </div>
           </div>
@@ -299,7 +432,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </div>
         </div>
 
-        <Card className="card-glow hover-lift reveal-up h-full overflow-hidden rounded-xl border-border bg-card">
+        <Card id="total-monthly-section" className="card-glow hover-lift reveal-up h-full overflow-hidden rounded-xl border-border bg-card">
           <CardHeader>
             <CardTitle className="text-foreground">Total monthly cost</CardTitle>
             <CardDescription>
@@ -313,7 +446,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <Card className="card-glow hover-lift reveal-up reveal-delay-3 h-full rounded-xl border-border bg-card">
+        <Card id="billing-timeline-section" className="card-glow hover-lift reveal-up reveal-delay-3 h-full rounded-xl border-border bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-foreground">
               <CalendarClock className="h-5 w-5 text-primary" />
@@ -354,7 +487,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         </Card>
 
         {hasTrialAlerts && (
-          <div className="reveal-up reveal-delay-2 h-full [&>*]:h-full">
+          <div id="trial-trap-section" className="reveal-up reveal-delay-2 h-full [&>*]:h-full">
             <TrialTrapDetector subscriptions={subscriptions} />
           </div>
         )}
@@ -363,7 +496,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           <UsageValueMeter subscriptions={subscriptions} />
         </div>
 
-        <div className="reveal-up reveal-delay-6 h-full [&>*]:h-full">
+        <div id="sharing-optimizer-section" className="reveal-up reveal-delay-6 h-full [&>*]:h-full">
           <SharingOptimizer />
         </div>
 
@@ -402,7 +535,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           </CardContent>
         </Card>
 
-        <div className="reveal-up reveal-delay-6 xl:col-span-2 min-h-[430px] [&>*]:h-full">
+        <div id="ai-chat-section" className="reveal-up reveal-delay-6 xl:col-span-2 min-h-[430px] [&>*]:h-full">
           <AppChatbox />
         </div>
       </div>
@@ -414,6 +547,64 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         subscriptionId={editingId}
         subscriptions={subscriptions}
       />
+
+      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Demo mode: Step {demoStepIndex + 1} of {demoSteps.length}
+            </DialogTitle>
+            <DialogDescription className="pt-1">
+              {currentDemoStep?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <p className="text-sm text-foreground/90">
+            {currentDemoStep?.description}
+          </p>
+
+          <DialogFooter className="sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={goToPreviousStep}
+              disabled={isFirstDemoStep}
+              className="rounded-lg"
+            >
+              Previous step
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDemoOpen(false)}
+                className="rounded-lg"
+              >
+                Exit demo
+              </Button>
+
+              {isLastDemoStep ? (
+                <Button
+                  type="button"
+                  className="btn-gradient rounded-lg"
+                  onClick={() => setDemoOpen(false)}
+                >
+                  Finish demo
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  className="btn-gradient rounded-lg"
+                  onClick={goToNextStep}
+                >
+                  Next step
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
