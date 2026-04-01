@@ -11,14 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { formatCurrency, getBillingDateLabel } from "@/lib/utils";
 import { SubscriptionForm } from "@/components/dashboard/subscription-form";
 import { SubscriptionList } from "@/components/dashboard/subscription-list";
@@ -75,6 +67,11 @@ interface DemoStep {
   targetId: string;
 }
 
+interface DemoPopupPosition {
+  top: number;
+  left: number;
+}
+
 function getDaysUntilBillingDay(day: number): number {
   const now = new Date();
   const currentDay = now.getDate();
@@ -96,6 +93,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const [animatedTotal, setAnimatedTotal] = useState(0);
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
+  const [demoPopupPosition, setDemoPopupPosition] = useState<DemoPopupPosition>({ top: 80, left: 24 });
   const previousAnimatedTotalRef = useRef(0);
   const demoStartedFromQueryRef = useRef(false);
 
@@ -297,13 +295,62 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
     target.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [demoOpen, demoStepIndex, demoSteps]);
 
+  useEffect(() => {
+    if (!demoOpen) return;
+
+    const step = demoSteps[demoStepIndex];
+    if (!step) return;
+
+    const updateDemoPopupPosition = () => {
+      const target = document.getElementById(step.targetId);
+      if (!target) return;
+
+      const rect = target.getBoundingClientRect();
+      const popupWidth = 420;
+      const popupHeight = 280;
+      const gap = 16;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let left = rect.right + gap;
+      if (left + popupWidth > viewportWidth - 16) {
+        left = rect.left - popupWidth - gap;
+      }
+      if (left < 16) {
+        left = Math.min(
+          Math.max(16, rect.left + rect.width / 2 - popupWidth / 2),
+          viewportWidth - popupWidth - 16,
+        );
+      }
+
+      let top = rect.top;
+      if (top + popupHeight > viewportHeight - 16) {
+        top = viewportHeight - popupHeight - 16;
+      }
+      if (top < 16) {
+        top = 16;
+      }
+
+      setDemoPopupPosition({ top, left });
+    };
+
+    updateDemoPopupPosition();
+    window.addEventListener("resize", updateDemoPopupPosition);
+    window.addEventListener("scroll", updateDemoPopupPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateDemoPopupPosition);
+      window.removeEventListener("scroll", updateDemoPopupPosition, true);
+    };
+  }, [demoOpen, demoStepIndex, demoSteps]);
+
   const currentDemoStep = demoSteps[demoStepIndex];
   const isFirstDemoStep = demoStepIndex === 0;
   const isLastDemoStep = demoStepIndex === demoSteps.length - 1;
 
   function getDemoFocusClass(targetId: string): string {
     if (!demoOpen || currentDemoStep?.targetId !== targetId) return "";
-    return "ring-2 ring-primary/60 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_hsl(var(--primary)_/_0.25),0_0_32px_-12px_hsl(var(--primary)_/_0.55)] transition-all duration-300";
+    return "relative z-40 ring-2 ring-primary/60 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_hsl(var(--primary)_/_0.25),0_0_32px_-12px_hsl(var(--primary)_/_0.55)] transition-all duration-300";
   }
 
   if (loading) {
@@ -553,63 +600,65 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         subscriptions={subscriptions}
       />
 
-      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>
-              Demo mode: Step {demoStepIndex + 1} of {demoSteps.length}
-            </DialogTitle>
-            <DialogDescription className="pt-1">
-              {currentDemoStep?.title}
-            </DialogDescription>
-          </DialogHeader>
+      {demoOpen && (
+        <>
+          <div className="pointer-events-none fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" />
 
-          <p className="text-sm text-foreground/90">
-            {currentDemoStep?.description}
-          </p>
+          <div
+            className="fixed z-50 w-[min(420px,calc(100vw-2rem))] rounded-2xl border border-border bg-card/95 p-5 shadow-[0_20px_70px_-25px_hsl(var(--primary)_/_0.55)] backdrop-blur"
+            style={{ top: demoPopupPosition.top, left: demoPopupPosition.left }}
+          >
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
+                Demo mode: Step {demoStepIndex + 1} of {demoSteps.length}
+              </p>
+              <h3 className="text-lg font-semibold text-foreground">{currentDemoStep?.title}</h3>
+              <p className="text-sm text-muted-foreground">{currentDemoStep?.description}</p>
+            </div>
 
-          <DialogFooter className="sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={goToPreviousStep}
-              disabled={isFirstDemoStep}
-              className="rounded-lg"
-            >
-              Previous step
-            </Button>
-
-            <div className="flex items-center gap-2">
+            <div className="mt-5 flex items-center justify-between gap-2">
               <Button
                 type="button"
-                variant="ghost"
-                onClick={() => setDemoOpen(false)}
+                variant="outline"
+                onClick={goToPreviousStep}
+                disabled={isFirstDemoStep}
                 className="rounded-lg"
               >
-                Exit demo
+                Previous step
               </Button>
 
-              {isLastDemoStep ? (
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
-                  className="btn-gradient rounded-lg"
+                  variant="ghost"
                   onClick={() => setDemoOpen(false)}
+                  className="rounded-lg"
                 >
-                  Finish demo
+                  Exit demo
                 </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="btn-gradient rounded-lg"
-                  onClick={goToNextStep}
-                >
-                  Next step
-                </Button>
-              )}
+
+                {isLastDemoStep ? (
+                  <Button
+                    type="button"
+                    className="btn-gradient rounded-lg"
+                    onClick={() => setDemoOpen(false)}
+                  >
+                    Finish demo
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="btn-gradient rounded-lg"
+                    onClick={goToNextStep}
+                  >
+                    Next step
+                  </Button>
+                )}
+              </div>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </>
+      )}
     </div>
   );
 }
