@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 const createSchema = z.object({ name: z.string().min(1, "Name is required") });
 
 export async function GET(): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const circles = await prisma.circle.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     include: {
       members: {
         include: { subscriptions: true },
@@ -40,8 +39,8 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let body: unknown;
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
   const circle = await prisma.circle.create({
-    data: { userId: session.user.id, name: parsed.data.name },
+    data: { userId, name: parsed.data.name },
   });
   return NextResponse.json({
     id: circle.id,

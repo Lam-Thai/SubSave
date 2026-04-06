@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 const updateSchema = z.object({ name: z.string().min(1).optional() });
 
@@ -10,13 +9,13 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
   const circle = await prisma.circle.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     include: {
       members: { include: { subscriptions: true } },
     },
@@ -45,8 +44,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
@@ -64,7 +63,7 @@ export async function PATCH(
     );
   }
   const count = await prisma.circle.updateMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     data: parsed.data,
   });
   if (count.count === 0) {
@@ -95,13 +94,13 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
   const count = await prisma.circle.deleteMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   });
   if (count.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

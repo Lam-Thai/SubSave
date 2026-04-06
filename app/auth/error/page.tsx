@@ -20,7 +20,7 @@ export default function AuthErrorPage() {
         </CardHeader>
         <CardContent>
           <Button asChild className="btn-gradient rounded-xl">
-            <Link href="/auth/signin">Try again</Link>
+            <Link href="/sign-in">Try again</Link>
           </Button>
         </CardContent>
       </Card>

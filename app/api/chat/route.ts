@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getRequestId, jsonWithRequestId } from "@/lib/http";
 import { attachRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1, "Message is required").max(1200, "Message is too long"),
@@ -154,7 +153,7 @@ function createQuotaFallbackReply(message: string): string {
     {
       match: /login|signin|sign in|auth/i,
       answer:
-        "SubSave uses NextAuth. Available providers depend on env config: Google OAuth, email magic-link, or development credentials login.",
+        "SubSave uses Clerk authentication for secure sign-in, session management, and protected routes.",
     },
   ];
 
@@ -169,15 +168,15 @@ function createQuotaFallbackReply(message: string): string {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(request);
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
   }
 
   const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
   const ip = forwardedFor.split(",")[0]?.trim() || "unknown";
   const rateLimit = checkRateLimit({
-    key: `chat:${session.user.id}:${ip}`,
+    key: `chat:${userId}:${ip}`,
     limit: 12,
     windowMs: 60_000,
   });
@@ -225,7 +224,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return response;
   }
 
-  const userSummary = await getUserSummary(session.user.id);
+  const userSummary = await getUserSummary(userId);
   const systemPrompt = createSystemPrompt(userSummary);
 
   const geminiResponse = await fetch(

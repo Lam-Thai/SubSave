@@ -1,14 +1,13 @@
-import { getServerSession } from "next-auth";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
-import { authOptions } from "@/lib/auth";
+import { getDbUserId } from "@/lib/clerk-auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const userId = await getDbUserId();
 
-  const subscriptions = session?.user?.id
+  const subscriptions = userId
     ? await prisma.subscription.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         orderBy: { createdAt: "desc" },
       })
     : [];

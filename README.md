@@ -89,7 +89,7 @@ It combines a clean dashboard, practical insights, and an AI assistant to make s
 
 - Next.js Route Handlers (App Router API)
 - Zod (request validation)
-- NextAuth.js (auth + session)
+- Clerk (auth + session + route protection)
 
 ## Database / ORM
 
@@ -99,10 +99,9 @@ It combines a clean dashboard, practical insights, and an AI assistant to make s
 
 ## Authentication
 
-- NextAuth.js + Prisma Adapter
-- Google OAuth (optional by env)
-- Email magic-link (optional by env)
-- Dev credentials provider for local development
+- Clerk
+- Hosted sign-in/sign-up flows
+- Session-backed route protection for dashboard and APIs
 
 ## Styling / UI Utilities
 
@@ -119,22 +118,14 @@ Create a `.env` file and configure:
 Required:
 
 - `DATABASE_URL`
-- `NEXTAUTH_SECRET`
-- `NEXTAUTH_URL` (usually `http://localhost:3000`)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
 - `GEMINI_API_KEY` (for AI assistant)
 
-Optional auth providers:
+Optional Clerk routing config:
 
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-
-Optional email magic-link:
-
-- `EMAIL_SERVER_HOST`
-- `EMAIL_SERVER_PORT`
-- `EMAIL_SERVER_USER`
-- `EMAIL_SERVER_PASSWORD`
-- `EMAIL_FROM`
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL` (default `/sign-in`)
+- `NEXT_PUBLIC_CLERK_SIGN_UP_URL` (default `/sign-up`)
 
 ---
 
@@ -207,6 +198,7 @@ Open: http://localhost:3000
 - Added route-level rate limiting for `/api/chat` and subscription writes
 - Added `/api/health` endpoint with Prisma connectivity checks and latency reporting
 - Added dashboard system-health KPI card with periodic health polling
+- Migrated authentication/authorization from NextAuth to Clerk
 
 ---
 

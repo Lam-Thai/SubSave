@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getRequestId, jsonWithRequestId } from "@/lib/http";
 import { attachRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 const createSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -17,12 +16,12 @@ const createSchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(request);
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
   }
   const subscriptions = await prisma.subscription.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     orderBy: { createdAt: "desc" },
   });
   type Sub = (typeof subscriptions)[number];
@@ -50,13 +49,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(request);
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
   }
 
   const rateLimit = checkRateLimit({
-    key: `subscription-write:${session.user.id}`,
+    key: `subscription-write:${userId}`,
     limit: 10,
     windowMs: 60_000,
   });
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const subscription = await prisma.subscription.create({
     data: {
-      userId: session.user.id,
+      userId,
       name: parsed.data.name,
       category: parsed.data.category,
       monthlyCost: parsed.data.monthlyCost,

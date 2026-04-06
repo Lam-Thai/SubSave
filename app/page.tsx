@@ -1,20 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions);
+  const { userId } = auth();
 
-  if (session?.user) {
+  if (userId) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
         <div className="rounded-2xl border border-border bg-card/80 p-8 shadow-green-glow-sm backdrop-blur-sm">
           <Image src="/logo.svg" alt="SubSave" width={48} height={48} className="mx-auto mb-4 rounded-xl" />
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h1>
           <p className="mt-2 text-muted-foreground">
-            Signed in as {session.user.email ?? session.user.name}
+            You are signed in.
           </p>
           <Button asChild className="mt-6 btn-gradient rounded-xl" size="lg">
             <Link href="/dashboard">Go to Dashboard</Link>
@@ -37,7 +36,7 @@ export default async function HomePage() {
       </div>
       <div className="flex flex-col sm:flex-row gap-4">
         <Button asChild size="lg" className="btn-gradient rounded-xl px-8 text-base font-semibold">
-          <Link href="/auth/signin">Sign in</Link>
+          <Link href="/sign-in">Sign in</Link>
         </Button>
         <Button
           asChild
@@ -45,7 +44,7 @@ export default async function HomePage() {
           size="lg"
           className="rounded-xl border-primary/40 bg-primary/5 px-8 text-base font-semibold text-primary hover:bg-primary/10 hover:text-primary"
         >
-          <Link href="/auth/signin">Get started</Link>
+          <Link href="/sign-in">Get started</Link>
         </Button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { SignOutButton } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) redirect("/auth/signin");
+  const { userId } = auth();
+  if (!userId) redirect("/sign-in");
+  const user = await currentUser();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -23,14 +24,16 @@ export default async function DashboardLayout({
           </Link>
           <nav className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground max-w-[180px] truncate sm:max-w-none">
-              {session.user.email ?? session.user.name}
+              {user?.primaryEmailAddress?.emailAddress ?? user?.fullName ?? "User"}
             </span>
             <Button variant="outline" size="sm" className="rounded-lg border-border" asChild>
               <Link href="/dashboard?demo=1">Demo</Link>
             </Button>
-            <Button variant="outline" size="sm" className="rounded-lg border-border" asChild>
-              <Link href="/auth/signout">Sign out</Link>
-            </Button>
+            <SignOutButton>
+              <Button variant="outline" size="sm" className="rounded-lg border-border">
+                Sign out
+              </Button>
+            </SignOutButton>
           </nav>
         </div>
       </header>

@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 export async function GET(): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const [userSubs, circles] = await Promise.all([
     prisma.subscription.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
     }),
     prisma.circle.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         members: { include: { subscriptions: true } },
       },

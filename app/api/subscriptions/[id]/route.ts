@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getDbUserId } from "@/lib/clerk-auth";
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,13 +16,13 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
   const subscription = await prisma.subscription.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   });
   if (!subscription) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -44,8 +43,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
@@ -67,7 +66,7 @@ export async function PATCH(
     data.trialEndsAt = parsed.data.trialEndsAt ? new Date(parsed.data.trialEndsAt) : null;
   }
   const subscription = await prisma.subscription.updateMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     data,
   });
   if (subscription.count === 0) {
@@ -90,13 +89,13 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getDbUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
   const result = await prisma.subscription.deleteMany({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
