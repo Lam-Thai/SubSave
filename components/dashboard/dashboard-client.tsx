@@ -77,7 +77,7 @@ interface DemoPopupPosition {
 }
 
 interface DemoPopupArrow {
-  side: "left" | "right" | "top";
+  side: "left" | "right" | "top" | "bottom";
   offset: number;
 }
 
@@ -104,6 +104,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const [demoStepIndex, setDemoStepIndex] = useState(0);
   const [demoPopupPosition, setDemoPopupPosition] = useState<DemoPopupPosition>({ top: 80, left: 24 });
   const [demoPopupArrow, setDemoPopupArrow] = useState<DemoPopupArrow>({ side: "left", offset: 56 });
+  const demoPopupRef = useRef<HTMLDivElement | null>(null);
   const previousAnimatedTotalRef = useRef(0);
 
   async function fetchSubscriptions() {
@@ -320,44 +321,44 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       if (!target) return;
 
       const rect = target.getBoundingClientRect();
-      const popupHeight = 280;
+      const popupRect = demoPopupRef.current?.getBoundingClientRect();
+      const popupHeight = popupRect?.height ?? 280;
       const gap = 16;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const popupWidth = Math.min(420, viewportWidth - 32);
+      const popupWidth = popupRect?.width ?? Math.min(420, viewportWidth - 32);
       const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+      const minY = 12;
+      const minX = 12;
       const targetCenterY = rect.top + rect.height / 2;
+      const targetCenterX = rect.left + rect.width / 2;
       const spaceRight = viewportWidth - rect.right;
       const spaceLeft = rect.left;
+      const spaceTop = rect.top;
+      const spaceBottom = viewportHeight - rect.bottom;
 
-      let placement: "right" | "left" = spaceRight >= spaceLeft ? "right" : "left";
-      if (placement === "right" && spaceRight < popupWidth + gap && spaceLeft >= popupWidth + gap) {
-        placement = "left";
-      }
-      if (placement === "left" && spaceLeft < popupWidth + gap && spaceRight >= popupWidth + gap) {
-        placement = "right";
-      }
+      if (spaceRight >= popupWidth + gap || spaceLeft >= popupWidth + gap) {
+        const placement: "right" | "left" =
+          spaceRight >= popupWidth + gap || spaceRight >= spaceLeft ? "right" : "left";
 
-      let left =
-        placement === "right"
-          ? rect.right + gap
-          : rect.left - popupWidth - gap;
+        let left =
+          placement === "right"
+            ? rect.right + gap
+            : rect.left - popupWidth - gap;
 
-      left = clamp(left, 16, viewportWidth - popupWidth - 16);
+        left = clamp(left, minX, viewportWidth - popupWidth - minX);
+        const top = clamp(targetCenterY - popupHeight / 2, minY, viewportHeight - popupHeight - minY);
 
-      const top = clamp(targetCenterY - popupHeight / 2, 16, viewportHeight - popupHeight - 16);
+        setDemoPopupPosition({ top, left });
 
-      setDemoPopupPosition({ top, left });
+        if (placement === "right") {
+          setDemoPopupArrow({
+            side: "left",
+            offset: clamp(targetCenterY - top, 24, popupHeight - 24),
+          });
+          return;
+        }
 
-      if (placement === "right") {
-        setDemoPopupArrow({
-          side: "left",
-          offset: clamp(targetCenterY - top, 24, popupHeight - 24),
-        });
-        return;
-      }
-
-      if (placement === "left") {
         setDemoPopupArrow({
           side: "right",
           offset: clamp(targetCenterY - top, 24, popupHeight - 24),
@@ -365,13 +366,41 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
         return;
       }
 
+      if (spaceBottom >= popupHeight + gap || spaceBottom >= spaceTop) {
+        const top = clamp(rect.bottom + gap, minY, viewportHeight - popupHeight - minY);
+        const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
+
+        setDemoPopupPosition({ top, left });
+        setDemoPopupArrow({
+          side: "top",
+          offset: clamp(targetCenterX - left, 24, popupWidth - 24),
+        });
+        return;
+      }
+
+      if (spaceTop >= popupHeight + gap) {
+        const top = clamp(rect.top - popupHeight - gap, minY, viewportHeight - popupHeight - minY);
+        const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
+        setDemoPopupPosition({ top, left });
+        setDemoPopupArrow({
+          side: "bottom",
+          offset: clamp(targetCenterX - left, 24, popupWidth - 24),
+        });
+        return;
+      }
+
+      // If neither top nor bottom can fit fully (short viewport), keep popup near the target center.
+      const top = clamp(targetCenterY - popupHeight / 2, minY, viewportHeight - popupHeight - minY);
+      const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
+      setDemoPopupPosition({ top, left });
       setDemoPopupArrow({
-        side: "right",
+        side: "left",
         offset: clamp(targetCenterY - top, 24, popupHeight - 24),
       });
     };
 
     updateDemoPopupPosition();
+    window.requestAnimationFrame(updateDemoPopupPosition);
     window.addEventListener("resize", updateDemoPopupPosition);
     window.addEventListener("scroll", updateDemoPopupPosition, true);
 
@@ -380,43 +409,6 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       window.removeEventListener("scroll", updateDemoPopupPosition, true);
     };
   }, [demoOpen, demoStepIndex, demoSteps]);
-
-  useEffect(() => {
-    if (!demoOpen) return;
-
-    const preventScroll = (event: Event) => {
-      event.preventDefault();
-    };
-
-    const preventKeyScroll = (event: KeyboardEvent) => {
-      const blockedKeys = [
-        "ArrowUp",
-        "ArrowDown",
-        "PageUp",
-        "PageDown",
-        "Home",
-        "End",
-        " ",
-      ];
-      if (blockedKeys.includes(event.key)) {
-        event.preventDefault();
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    window.addEventListener("wheel", preventScroll, { passive: false });
-    window.addEventListener("touchmove", preventScroll, { passive: false });
-    window.addEventListener("keydown", preventKeyScroll);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("wheel", preventScroll);
-      window.removeEventListener("touchmove", preventScroll);
-      window.removeEventListener("keydown", preventKeyScroll);
-    };
-  }, [demoOpen]);
 
   const currentDemoStep = demoSteps[demoStepIndex];
   const isFirstDemoStep = demoStepIndex === 0;
@@ -681,6 +673,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
           <div className="pointer-events-none fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" />
 
           <div
+            ref={demoPopupRef}
             className="fixed z-50 w-[min(420px,calc(100vw-2rem))] overflow-visible rounded-2xl border border-border bg-card/95 p-5 shadow-[0_20px_70px_-25px_hsl(var(--primary)_/_0.55)] backdrop-blur"
             style={{ top: demoPopupPosition.top, left: demoPopupPosition.left }}
           >
@@ -688,9 +681,17 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
               className={`absolute h-4 w-4 rotate-45 border border-border bg-card/95 ${
                 demoPopupArrow.side === "left"
                   ? "-left-2 border-r-0 border-t-0"
+                  : demoPopupArrow.side === "top"
+                    ? "-top-2 border-l-0 border-b-0"
+                    : demoPopupArrow.side === "bottom"
+                      ? "-bottom-2 border-r-0 border-t-0"
                   : "-right-2 border-l-0 border-b-0"
               }`}
-              style={{ top: `${demoPopupArrow.offset}px` }}
+              style={
+                demoPopupArrow.side === "left" || demoPopupArrow.side === "right"
+                  ? { top: `${demoPopupArrow.offset}px` }
+                  : { left: `${demoPopupArrow.offset}px` }
+              }
             />
 
             <div className="space-y-2">
