@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getRequestId, jsonWithRequestId } from "@/lib/http";
+import { attachRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1, "Message is required").max(1200, "Message is too long"),
@@ -166,31 +168,61 @@ function createQuotaFallbackReply(message: string): string {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = getRequestId(request);
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
+  }
+
+  const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
+  const ip = forwardedFor.split(",")[0]?.trim() || "unknown";
+  const rateLimit = checkRateLimit({
+    key: `chat:${session.user.id}:${ip}`,
+    limit: 12,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    const response = jsonWithRequestId(
+      {
+        error: "Too many requests. Please wait and try again.",
+        code: "RATE_LIMITED",
+      },
+      requestId,
+      { status: 429 },
+    );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json(
+    const response = jsonWithRequestId(
       { error: "GEMINI_API_KEY is not configured on the server." },
-      { status: 500 }
+      requestId,
+      { status: 500 },
     );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const response = jsonWithRequestId({ error: "Invalid JSON" }, requestId, { status: 400 });
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    const response = jsonWithRequestId(
       { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
+      requestId,
+      { status: 400 },
     );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
   const userSummary = await getUserSummary(session.user.id);
@@ -220,19 +252,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!geminiResponse.ok) {
     const errorText = await geminiResponse.text();
     if (geminiResponse.status === 429) {
-      return NextResponse.json({
-        reply: createQuotaFallbackReply(parsed.data.message),
-        providerStatus: "quota_exhausted",
-        providerMessage:
-          "AI provider quota exhausted. Enable billing or increase Gemini API quota in Google AI Studio / Google Cloud.",
-        providerDebug: errorText || geminiResponse.statusText,
-      });
+      const response = jsonWithRequestId(
+        {
+          reply: createQuotaFallbackReply(parsed.data.message),
+          providerStatus: "quota_exhausted",
+          providerMessage:
+            "AI provider quota exhausted. Enable billing or increase Gemini API quota in Google AI Studio / Google Cloud.",
+          providerDebug: errorText || geminiResponse.statusText,
+        },
+        requestId,
+      );
+      attachRateLimitHeaders(response, rateLimit);
+      return response;
     }
 
-    return NextResponse.json(
+    const response = jsonWithRequestId(
       { error: `Gemini request failed: ${errorText || geminiResponse.statusText}` },
-      { status: 502 }
+      requestId,
+      { status: 502 },
     );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
   const payload = (await geminiResponse.json()) as {
@@ -250,11 +290,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .trim() ?? "";
 
   if (!reply) {
-    return NextResponse.json(
+    const response = jsonWithRequestId(
       { error: "Gemini returned an empty response." },
-      { status: 502 }
+      requestId,
+      { status: 502 },
     );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
 
-  return NextResponse.json({ reply });
+  const response = jsonWithRequestId({ reply }, requestId);
+  attachRateLimitHeaders(response, rateLimit);
+  return response;
 }

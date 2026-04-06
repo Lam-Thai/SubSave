@@ -40,6 +40,10 @@ const AppChatbox = dynamic(
   () => import("@/components/dashboard/app-chatbox").then((mod) => mod.AppChatbox),
 );
 
+const SystemHealthCard = dynamic(
+  () => import("@/components/dashboard/system-health-card").then((mod) => mod.SystemHealthCard),
+);
+
 export interface Subscription {
   id: string;
   name: string;
@@ -509,7 +513,7 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="space-y-6 xl:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <Card className="card-glow hover-lift reveal-up reveal-delay-2 border-border bg-card">
               <CardHeader className="pb-2">
                 <CardDescription className="inline-flex items-center gap-2">
@@ -551,6 +555,8 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
                 </CardTitle>
               </CardHeader>
             </Card>
+
+            <SystemHealthCard />
           </div>
         </div>
 

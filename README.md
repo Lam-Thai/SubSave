@@ -59,6 +59,13 @@ It combines a clean dashboard, practical insights, and an AI assistant to make s
 - Responsive layout for desktop/tablet/mobile
 - Reduced-motion support for accessibility
 
+## 8) Reliability & Production Readiness
+
+- Request tracing with `x-request-id` on API responses for easier debugging
+- Built-in rate limiting for AI chat and subscription-create endpoints
+- Runtime health endpoint at `/api/health` with database check, latency, uptime, and version metadata
+- Live system health card on dashboard that auto-refreshes every 30 seconds
+
 ---
 
 # Current Tech Stack
@@ -196,6 +203,10 @@ Open: http://localhost:3000
 - Added KPI summary cards and upcoming billing timeline
 - Added modern motion system (page reveal, staggered cards, hover lift, animated brand accents)
 - Added smooth scroll CTA interactions in dashboard
+- Added API request ID tracing (`x-request-id`) for faster production debugging
+- Added route-level rate limiting for `/api/chat` and subscription writes
+- Added `/api/health` endpoint with Prisma connectivity checks and latency reporting
+- Added dashboard system-health KPI card with periodic health polling
 
 ---
 

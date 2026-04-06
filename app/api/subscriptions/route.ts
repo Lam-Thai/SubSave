@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getRequestId, jsonWithRequestId } from "@/lib/http";
+import { attachRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
 
 const createSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -13,10 +15,11 @@ const createSchema = z.object({
   monthlyUsageCount: z.number().int().min(0).optional().nullable(),
 });
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const requestId = getRequestId(request);
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
   }
   const subscriptions = await prisma.subscription.findMany({
     where: { userId: session.user.id },
@@ -27,38 +30,67 @@ export async function GET(): Promise<NextResponse> {
     (sum: number, s: Sub) => sum + Number(s.monthlyCost),
     0
   );
-  return NextResponse.json({
-    subscriptions: subscriptions.map((s: Sub) => ({
-      id: s.id,
-      name: s.name,
-      category: s.category,
-      monthlyCost: Number(s.monthlyCost),
-      billingDate: s.billingDate,
-      trialEndsAt: s.trialEndsAt?.toISOString() ?? null,
-      monthlyUsageCount: s.monthlyUsageCount ?? 0,
-      createdAt: s.createdAt.toISOString(),
-    })),
-    totalMonthly,
-  });
+  return jsonWithRequestId(
+    {
+      subscriptions: subscriptions.map((s: Sub) => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        monthlyCost: Number(s.monthlyCost),
+        billingDate: s.billingDate,
+        trialEndsAt: s.trialEndsAt?.toISOString() ?? null,
+        monthlyUsageCount: s.monthlyUsageCount ?? 0,
+        createdAt: s.createdAt.toISOString(),
+      })),
+      totalMonthly,
+    },
+    requestId,
+  );
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = getRequestId(request);
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonWithRequestId({ error: "Unauthorized" }, requestId, { status: 401 });
   }
+
+  const rateLimit = checkRateLimit({
+    key: `subscription-write:${session.user.id}`,
+    limit: 10,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    const response = jsonWithRequestId(
+      {
+        error: "Too many create requests. Please wait a moment.",
+        code: "RATE_LIMITED",
+      },
+      requestId,
+      { status: 429 },
+    );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
+  }
+
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const response = jsonWithRequestId({ error: "Invalid JSON" }, requestId, { status: 400 });
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    const response = jsonWithRequestId(
       { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
+      requestId,
+      { status: 400 },
     );
+    attachRateLimitHeaders(response, rateLimit);
+    return response;
   }
   const subscription = await prisma.subscription.create({
     data: {
@@ -71,14 +103,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       monthlyUsageCount: parsed.data.monthlyUsageCount ?? undefined,
     },
   });
-  return NextResponse.json({
-    id: subscription.id,
-    name: subscription.name,
-    category: subscription.category,
-    monthlyCost: Number(subscription.monthlyCost),
-    billingDate: subscription.billingDate,
-    trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
-    monthlyUsageCount: subscription.monthlyUsageCount ?? 0,
-    createdAt: subscription.createdAt.toISOString(),
-  });
+  const response = jsonWithRequestId(
+    {
+      id: subscription.id,
+      name: subscription.name,
+      category: subscription.category,
+      monthlyCost: Number(subscription.monthlyCost),
+      billingDate: subscription.billingDate,
+      trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+      monthlyUsageCount: subscription.monthlyUsageCount ?? 0,
+      createdAt: subscription.createdAt.toISOString(),
+    },
+    requestId,
+  );
+  attachRateLimitHeaders(response, rateLimit);
+  return response;
 }
