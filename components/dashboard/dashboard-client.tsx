@@ -327,75 +327,72 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const popupWidth = popupRect?.width ?? Math.min(420, viewportWidth - 32);
-      const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+      const clamp = (value: number, min: number, max: number) => {
+        if (max < min) return min;
+        return Math.min(Math.max(value, min), max);
+      };
       const minY = 12;
       const minX = 12;
+      const maxLeft = Math.max(minX, viewportWidth - popupWidth - minX);
+      const maxTop = Math.max(minY, viewportHeight - popupHeight - minY);
       const targetCenterY = rect.top + rect.height / 2;
       const targetCenterX = rect.left + rect.width / 2;
-      const spaceRight = viewportWidth - rect.right;
-      const spaceLeft = rect.left;
-      const spaceTop = rect.top;
-      const spaceBottom = viewportHeight - rect.bottom;
 
-      if (spaceRight >= popupWidth + gap || spaceLeft >= popupWidth + gap) {
-        const placement: "right" | "left" =
-          spaceRight >= popupWidth + gap || spaceRight >= spaceLeft ? "right" : "left";
-
-        let left =
-          placement === "right"
-            ? rect.right + gap
-            : rect.left - popupWidth - gap;
-
-        left = clamp(left, minX, viewportWidth - popupWidth - minX);
-        const top = clamp(targetCenterY - popupHeight / 2, minY, viewportHeight - popupHeight - minY);
-
-        setDemoPopupPosition({ top, left });
-
-        if (placement === "right") {
-          setDemoPopupArrow({
-            side: "left",
-            offset: clamp(targetCenterY - top, 24, popupHeight - 24),
-          });
-          return;
-        }
-
-        setDemoPopupArrow({
+      const candidates: Array<{ top: number; left: number; side: DemoPopupArrow["side"] }> = [
+        {
+          top: targetCenterY - popupHeight / 2,
+          left: rect.right + gap,
+          side: "left",
+        },
+        {
+          top: targetCenterY - popupHeight / 2,
+          left: rect.left - popupWidth - gap,
           side: "right",
-          offset: clamp(targetCenterY - top, 24, popupHeight - 24),
-        });
-        return;
-      }
-
-      if (spaceBottom >= popupHeight + gap || spaceBottom >= spaceTop) {
-        const top = clamp(rect.bottom + gap, minY, viewportHeight - popupHeight - minY);
-        const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
-
-        setDemoPopupPosition({ top, left });
-        setDemoPopupArrow({
+        },
+        {
+          top: rect.bottom + gap,
+          left: targetCenterX - popupWidth / 2,
           side: "top",
-          offset: clamp(targetCenterX - left, 24, popupWidth - 24),
-        });
-        return;
-      }
-
-      if (spaceTop >= popupHeight + gap) {
-        const top = clamp(rect.top - popupHeight - gap, minY, viewportHeight - popupHeight - minY);
-        const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
-        setDemoPopupPosition({ top, left });
-        setDemoPopupArrow({
+        },
+        {
+          top: rect.top - popupHeight - gap,
+          left: targetCenterX - popupWidth / 2,
           side: "bottom",
-          offset: clamp(targetCenterX - left, 24, popupWidth - 24),
+        },
+      ];
+
+      const scored = candidates.map((candidate) => {
+        const left = clamp(candidate.left, minX, maxLeft);
+        const top = clamp(candidate.top, minY, maxTop);
+        const popupCenterX = left + popupWidth / 2;
+        const popupCenterY = top + popupHeight / 2;
+        const dx = popupCenterX - targetCenterX;
+        const dy = popupCenterY - targetCenterY;
+        const distance = Math.hypot(dx, dy);
+        return {
+          ...candidate,
+          left,
+          top,
+          distance,
+        };
+      });
+
+      scored.sort((a, b) => a.distance - b.distance);
+      const best = scored[0];
+
+      setDemoPopupPosition({ top: best.top, left: best.left });
+
+      if (best.side === "left" || best.side === "right") {
+        setDemoPopupArrow({
+          side: best.side,
+          offset: clamp(targetCenterY - best.top, 24, popupHeight - 24),
         });
         return;
       }
 
-      // If neither top nor bottom can fit fully (short viewport), keep popup near the target center.
-      const top = clamp(targetCenterY - popupHeight / 2, minY, viewportHeight - popupHeight - minY);
-      const left = clamp(targetCenterX - popupWidth / 2, minX, viewportWidth - popupWidth - minX);
-      setDemoPopupPosition({ top, left });
       setDemoPopupArrow({
-        side: "left",
-        offset: clamp(targetCenterY - top, 24, popupHeight - 24),
+        side: best.side,
+        offset: clamp(targetCenterX - best.left, 24, popupWidth - 24),
       });
     };
 
