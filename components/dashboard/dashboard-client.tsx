@@ -76,11 +76,6 @@ interface DemoPopupPosition {
   left: number;
 }
 
-interface DemoPopupArrow {
-  side: "left" | "right" | "top" | "bottom";
-  offset: number;
-}
-
 function getDaysUntilBillingDay(day: number): number {
   const now = new Date();
   const currentDay = now.getDate();
@@ -103,7 +98,6 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
   const [demoOpen, setDemoOpen] = useState(false);
   const [demoStepIndex, setDemoStepIndex] = useState(0);
   const [demoPopupPosition, setDemoPopupPosition] = useState<DemoPopupPosition>({ top: 80, left: 24 });
-  const [demoPopupArrow, setDemoPopupArrow] = useState<DemoPopupArrow>({ side: "left", offset: 56 });
   const demoPopupRef = useRef<HTMLDivElement | null>(null);
   const previousAnimatedTotalRef = useRef(0);
 
@@ -338,26 +332,22 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       const targetCenterY = rect.top + rect.height / 2;
       const targetCenterX = rect.left + rect.width / 2;
 
-      const candidates: Array<{ top: number; left: number; side: DemoPopupArrow["side"] }> = [
+      const candidates: Array<{ top: number; left: number }> = [
         {
           top: targetCenterY - popupHeight / 2,
           left: rect.right + gap,
-          side: "left",
         },
         {
           top: targetCenterY - popupHeight / 2,
           left: rect.left - popupWidth - gap,
-          side: "right",
         },
         {
           top: rect.bottom + gap,
           left: targetCenterX - popupWidth / 2,
-          side: "top",
         },
         {
           top: rect.top - popupHeight - gap,
           left: targetCenterX - popupWidth / 2,
-          side: "bottom",
         },
       ];
 
@@ -381,19 +371,6 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
       const best = scored[0];
 
       setDemoPopupPosition({ top: best.top, left: best.left });
-
-      if (best.side === "left" || best.side === "right") {
-        setDemoPopupArrow({
-          side: best.side,
-          offset: clamp(targetCenterY - best.top, 24, popupHeight - 24),
-        });
-        return;
-      }
-
-      setDemoPopupArrow({
-        side: best.side,
-        offset: clamp(targetCenterX - best.left, 24, popupWidth - 24),
-      });
     };
 
     updateDemoPopupPosition();
@@ -674,23 +651,6 @@ export function DashboardClient({ initialData }: DashboardClientProps) {
             className="fixed z-50 w-[min(420px,calc(100vw-2rem))] overflow-visible rounded-2xl border border-border bg-card/95 p-5 shadow-[0_20px_70px_-25px_hsl(var(--primary)_/_0.55)] backdrop-blur"
             style={{ top: demoPopupPosition.top, left: demoPopupPosition.left }}
           >
-            <div
-              className={`absolute h-4 w-4 rotate-45 border border-border bg-card/95 ${
-                demoPopupArrow.side === "left"
-                  ? "-left-2 border-r-0 border-t-0"
-                  : demoPopupArrow.side === "top"
-                    ? "-top-2 border-l-0 border-b-0"
-                    : demoPopupArrow.side === "bottom"
-                      ? "-bottom-2 border-r-0 border-t-0"
-                  : "-right-2 border-l-0 border-b-0"
-              }`}
-              style={
-                demoPopupArrow.side === "left" || demoPopupArrow.side === "right"
-                  ? { top: `${demoPopupArrow.offset}px` }
-                  : { left: `${demoPopupArrow.offset}px` }
-              }
-            />
-
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
                 Demo mode: Step {demoStepIndex + 1} of {demoSteps.length}
