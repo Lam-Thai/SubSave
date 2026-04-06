@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 
 export default async function SignOutPage() {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
   return (

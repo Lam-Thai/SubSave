@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   if (userId) {
     return (

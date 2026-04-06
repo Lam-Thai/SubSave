@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export async function getDbUserId(): Promise<string | null> {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) {
     return null;
   }
