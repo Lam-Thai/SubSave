@@ -1,4 +1,6 @@
 {
   "files.encoding": "utf8",
-  "files.autoGuessEncoding": true
+  "files.autoGuessEncoding": true,
+  "prisma.pinToPrisma6": true,
+  "prisma.enableDiagnostics": false
 }
